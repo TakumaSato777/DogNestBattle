@@ -13,13 +13,6 @@ public:
 		: IScene{ init }
 	{
 		area.resize(7,3,0);
-		/*area.resize(21);*/
-		/*for (int32 i = 0; i < 3; i++) {
-			for (int32 j = 0; j < 7; i++) {
-			for (int32 j = 0; j < 7; i++) {
-				area[i][j] = 0;
-			}
-		}*/
 	}
 
 	~Game()
@@ -30,7 +23,8 @@ public:
 	{
 		{
 			ClearPrint();
-			Print << U"UNK: " << playerBullets.size();
+			Print << U"自機弾: " << playerBullets.size();
+			Print << U"敵機弾: " << enemyBullets.size();
 			Print << U"アイテムの個数: " << items.size();
 			Print << U"timeAccumulator: " << timeAccumulator;
 		}
@@ -110,11 +104,6 @@ public:
 			// 弾のあたり判定円
 			const Circle BulletCircle{ playerBullet.pos, 30 };
 
-			/*for (int32 i = 0; i < 21; i++) {
-				if (Rect{ 50 + 100 * (i % 7),(i / 7) * 100 + 5,100,100 }.intersects(BulletCircle)) {
-					area[i] = 1;
-				}
-			}*/
 
 			for (int32 i = 0; i < 3; i++) {
 				for (int32 j = 0; j < 7; j++) {
@@ -127,7 +116,6 @@ public:
 
 		// 敵機ショットの発射
 		// 現在の時刻を取得
-		/*const double currentTime = Scene::Time();*/
 		if (currentTime - enemylastShootTime >= enemycooldownTime){
 
 			Vec2 enemyAim = {Random(800),Random(500.0)};
@@ -163,12 +151,6 @@ public:
 		{
 			// 弾のあたり判定円
 			const Circle BulletCircle{ enemyBullet.pos, 30 };
-
-			/*for (int32 i = 0; i < 21; i++) {
-				if (Rect{ 50 + 100 * (i % 7),(i / 7) * 100 + 5,100,100 }.intersects(BulletCircle)) {
-					area[i] = 2;
-				}
-			}*/
 
 			for (int32 i = 0; i < 3; i++) {
 				for (int32 j = 0; j < 7; j++) {
@@ -207,9 +189,6 @@ public:
 
 		///クリア判定
 		hantei = true;
-		/*for (int32 i = 0; i < 21; i++) {
-			if (area[i] != 1) hantei = false;
-		}*/
 
 		for (int32 i = 0; i < 3; i++) {
 			for (int32 j = 0; j < 7; j++) {
@@ -223,9 +202,6 @@ public:
 
 		///負けたとき
 		hantei = true;
-		/*for (int32 i = 0; i < 21; i++) {
-			if (area[i] != 2) hantei = false;
-		}*/
 
 		for (int32 i = 0; i < 3; i++) {
 			for (int32 j = 0; j < 7; j++) {
@@ -248,17 +224,6 @@ public:
 		Rect{ 750,0,5,600 }.draw(Palette::Pink);
 
 		///陣地描画
-		/*for (int32 i = 0; i < 21; i++) {
-			if (area[i] == 0) {
-				Rect{ 50 + 100 * (i % 7),(i / 7) * 100 + 5,100,100 }.draw(Palette::Gray).drawFrame(3, 0);
-			}
-			else if (area[i] == 1) {
-				Rect{ 50 + 100 * (i % 7),(i / 7) * 100 + 5,100,100 }.draw(Palette::Blue).drawFrame(3, 0);
-			}
-			else if (area[i] == 2) {
-				Rect{ 50 + 100 * (i % 7),(i / 7) * 100 + 5,100,100 }.draw(Palette::Red).drawFrame(3, 0);
-			}
-		}*/
 
 		for (int32 i = 0; i < 3; i++) {
 			for (int32 j = 0; j < 7; j++) {
