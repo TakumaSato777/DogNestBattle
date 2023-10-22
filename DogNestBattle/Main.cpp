@@ -2,7 +2,7 @@
 using App = SceneManager<String>;
 
 // 食べ物の種類
-constexpr size_t NumItems = 3;
+constexpr size_t NumItems = 2;
 
 // ゲームシーン
 class Game : public App::Scene
@@ -27,6 +27,8 @@ public:
 			Print << U"敵機弾: " << enemyBullets.size();
 			Print << U"アイテムの個数: " << items.size();
 			Print << U"timeAccumulator: " << timeAccumulator;
+			Print << U"クールダウン: " << cooldownTime;
+			Print << U"弾速度: " << BulletSpeed;
 		}
 		const double deltaTime = Scene::DeltaTime();
 
@@ -167,7 +169,7 @@ public:
 
 		while (itemSpawnTime <= timeAccumulator)
 		{
-			// 食べ物をランダムな場所に出現させる
+			// アイテムをランダムな場所に出現させる
 			items << Item{ .pos = Vec2{ Random(50.0, 750.0), -50 },
 				.type = Random<size_t>(0, NumItems - 1) };
 
@@ -183,9 +185,81 @@ public:
 			item.pos.y += move;
 		}
 
+		///アイテムの当たり判定
+		Circle playerCircle{ playerPos, 60 };
+		for (auto it = items.begin(); it != items.end(); ) {
+			Circle itemCircle{ it->pos, 30 };
+			if (playerCircle.intersects(itemCircle)) {
+				if (it->type == 0) {
+					BulletSpeed += 100.0;
+				}
+				else {
+					cooldownTime -= 0.5;
+					if (cooldownTime < 0.5) cooldownTime = 0.5;
+				}
+				// 削除する要素
+				it = items.erase(it);
+			}
+			else {
+				++it;
+			}
+		}
+
 		///画面外アイテム削除
 		items.remove_if([](const Item& item) { return (600 < item.pos.y); });
 
+		///猫関連
+		// 経過時間の蓄積
+		cattimeAccumulator += Scene::DeltaTime();
+
+		while (catSpawnTime <= cattimeAccumulator)
+		{
+			if (RandomBool()) {
+				// アイテムを左に出現させる
+				cats << Cat{ .pos = Vec2{ -50, 550 },.type = 0 };
+			}
+			else {
+				// アイテムを右に出現させる
+				cats << Cat{ .pos = Vec2{ 850, 550 },.type = 1 };
+			}
+
+			// 経過時間を減らす
+			cattimeAccumulator -= catSpawnTime;
+		}
+
+		///猫の移動
+		const double catmove = (catSpeed * Scene::DeltaTime());
+
+		for (auto& cat : cats)
+		{
+			if (cat.type == 0)cat.pos.x += catmove;
+			else cat.pos.x -= catmove;
+		}
+
+		/////弾と猫の当たり判定
+		for (auto it = cats.begin(); it != cats.end(); ) {
+			Circle catCircle{ it->pos, 30 };
+			bool intersectionFound = false;
+
+			for (auto& playerBullet : playerBullets) {
+				const Circle BulletCircle{ playerBullet.pos, 30 };
+				if (BulletCircle.intersects(catCircle)) {
+					// 削除する要素の位置を記録
+					it = cats.erase(it);
+					intersectionFound = true;
+					break;
+				}
+			}
+			// もし交差が見つからなかった場合、イテレータを更新
+			if (!intersectionFound) {
+				++it;
+			}
+		}
+
+
+		///画面外の猫削除
+		cats.remove_if([](const Cat& cat) { return (900 < cat.pos.x); });
+		cats.remove_if([](const Cat& cat) { return (-100 > cat.pos.x); });
 
 		///クリア判定
 		hantei = true;
@@ -261,6 +335,14 @@ public:
 			enemypadtexture.scaled(0.1).drawAt(enemyBullet.pos);
 		}
 
+
+		// 猫を描画する
+		for (const auto& cat : cats)
+		{
+			if(cat.type == 0) cattexture.mirrored().scaled(0.5).drawAt(cat.pos);
+			else cattexture.scaled(0.5).drawAt(cat.pos);
+		}
+
 	}
 
 private:
@@ -312,8 +394,8 @@ private:
 	{
 		Texture{ Emoji{ U"🦴" }},
 		Texture{ Emoji{ U"🍖" }},
-		Texture{ Emoji{ U"😻" }},
 	};
+
 	// アイテムが毎秒何ピクセルの速さで落下するか
 	double itemSpeed = 200.0;
 	// 何秒ごとにアイテムが出現するか
@@ -321,8 +403,27 @@ private:
 	// 前回の食べ物の出現から何秒経過したか
 	double timeAccumulator = 0.0;
 
+	///猫
+	struct Cat
+	{
+		Vec2 pos;
+
+		size_t type = 0;
+	};
+	Array<Cat> cats;
+
+	Texture cattexture{ U"🐈"_emoji };
+
+	// 猫が毎秒何ピクセルの速さで移動するか
+	double catSpeed = 200.0;
+	// 前回の猫の出現から何秒経過したか
+	double cattimeAccumulator = 0.0;
+	// 何秒ごとに猫が出現するか
+	double catSpawnTime = 1.0;
+	// 前回の食べ物の出現から何秒経過したか
+	double catAccumulator = 0.0;
+
 	///陣地関連
-	/*Array<int32> area;*/
 	Grid<int32> area;
 
 	bool hantei = true;
