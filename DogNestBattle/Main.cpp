@@ -83,6 +83,9 @@ public:
 		// 自機ショットを移動させる
 		for (auto& playerBullet : playerBullets)
 		{
+			// 弾のあたり判定円
+			const Circle BulletCircle{ playerBullet.pos, 30 };
+
 			if (playerBullet.pos.y < 0 && playerBullet.velocity.y < 0)
 			{
 				playerBullet.velocity.y *= -1;
@@ -92,6 +95,20 @@ public:
 			if (playerBullet.pos.x < 50 && playerBullet.velocity.x < 0 || 750 < playerBullet.pos.x && 0 < playerBullet.velocity.x)
 			{
 				playerBullet.velocity.x *= -1;
+			}
+
+			///家関連
+			if (Rect{ 50 + 100 * houseX,houseY * 100 + 5,100,5 }.intersects(BulletCircle)) {///上辺との接触
+				playerBullet.velocity.y *= -1;
+			}
+			if (Rect{ 150 + 100 * houseX,houseY * 100 + 5,5,100 }.intersects(BulletCircle)) {///右辺との接触
+				playerBullet.velocity.x *= -1;
+			}
+			if (Rect{ 50 + 100 * houseX,houseY * 100 + 5,5,100 }.intersects(BulletCircle)) {///左辺との接触
+				playerBullet.velocity.x *= -1;
+			}
+			if (Rect{ 50 + 100 * houseX,houseY * 100 + 55,100,5 }.intersects(BulletCircle)) {///下辺との接触
+				playerBullet.velocity.y *= -1;
 			}
 
 			playerBullet.pos += playerBullet.velocity * deltaTime;
@@ -255,7 +272,6 @@ public:
 				++it;
 			}
 		}
-
 
 		///画面外の猫削除
 		cats.remove_if([](const Cat& cat) { return (900 < cat.pos.x); });
@@ -425,6 +441,11 @@ private:
 
 	///陣地関連
 	Grid<int32> area;
+
+	///家関連
+	int32 houseX = 0;
+	int32 houseY = 0;
+	Texture housetexture{ U"🏡"_emoji };
 
 	bool hantei = true;
 };
