@@ -13,6 +13,8 @@ public:
 		: IScene{ init }
 	{
 		area.resize(7,3,0);
+		houseX = Random(6);
+		houseY = Random(2);
 	}
 
 	~Game()
@@ -126,8 +128,10 @@ public:
 
 			for (int32 i = 0; i < 3; i++) {
 				for (int32 j = 0; j < 7; j++) {
-					if (Rect{ 50 + 100 * j,i * 100 + 5,100,100 }.intersects(BulletCircle)) {
-						area[i][j] = 1;
+					if (!(j == houseX && i == houseY)) {
+						if (Rect{ 50 + 100 * j,i * 100 + 5,100,100 }.intersects(BulletCircle)) {
+							area[i][j] = 1;
+						}
 					}
 				}
 			}
@@ -148,6 +152,9 @@ public:
 		// 敵機ショットを移動させる
 		for (auto& enemyBullet : enemyBullets)
 		{
+			// 弾のあたり判定円
+			const Circle BulletCircle{ enemyBullet.pos, 30 };
+
 			if (enemyBullet.pos.y < 0 && enemyBullet.velocity.y < 0)
 			{
 				enemyBullet.velocity.y *= -1;
@@ -157,6 +164,20 @@ public:
 			if (enemyBullet.pos.x < 50 && enemyBullet.velocity.x < 0 || 750 < enemyBullet.pos.x && 0 < enemyBullet.velocity.x)
 			{
 				enemyBullet.velocity.x *= -1;
+			}
+
+			///家関連
+			if (Rect{ 50 + 100 * houseX,houseY * 100 + 5,100,5 }.intersects(BulletCircle)) {///上辺との接触
+				enemyBullet.velocity.y *= -1;
+			}
+			if (Rect{ 150 + 100 * houseX,houseY * 100 + 5,5,100 }.intersects(BulletCircle)) {///右辺との接触
+				enemyBullet.velocity.x *= -1;
+			}
+			if (Rect{ 50 + 100 * houseX,houseY * 100 + 5,5,100 }.intersects(BulletCircle)) {///左辺との接触
+				enemyBullet.velocity.x *= -1;
+			}
+			if (Rect{ 50 + 100 * houseX,houseY * 100 + 55,100,5 }.intersects(BulletCircle)) {///下辺との接触
+				enemyBullet.velocity.y *= -1;
 			}
 
 			enemyBullet.pos += enemyBullet.velocity * deltaTime;
@@ -173,8 +194,10 @@ public:
 
 			for (int32 i = 0; i < 3; i++) {
 				for (int32 j = 0; j < 7; j++) {
-					if (Rect{ 50 + 100 * j,i * 100 + 5,100,100 }.intersects(BulletCircle)) {
-						area[i][j] = 2;
+					if (!(j == houseX && i == houseY)) {
+						if (Rect{ 50 + 100 * j,i * 100 + 5,100,100 }.intersects(BulletCircle)) {
+							area[i][j] = 2;
+						}
 					}
 				}
 			}
@@ -282,7 +305,9 @@ public:
 
 		for (int32 i = 0; i < 3; i++) {
 			for (int32 j = 0; j < 7; j++) {
-				if (area[i][j] != 1) hantei = false;
+				if (!(j == houseX && i == houseY)) {
+					if (area[i][j] != 1) hantei = false;
+				}
 			}
 		}
 
@@ -295,7 +320,9 @@ public:
 
 		for (int32 i = 0; i < 3; i++) {
 			for (int32 j = 0; j < 7; j++) {
-				if (area[i][j] != 2) hantei = false;
+				if (!(j == houseX && i == houseY)) {
+					if (area[i][j] != 2) hantei = false;
+				}
 			}
 		}
 
@@ -317,14 +344,16 @@ public:
 
 		for (int32 i = 0; i < 3; i++) {
 			for (int32 j = 0; j < 7; j++) {
-				if (area[i][j] == 0) {
-					Rect{ 50 + 100 * j,i * 100 + 5,100,100 }.draw(Palette::Gray).drawFrame(3, 0);
-				}
-				else if (area[i][j] == 1) {
-					Rect{ 50 + 100 * j,i * 100 + 5,100,100 }.draw(Palette::Blue).drawFrame(3, 0);
-				}
-				else if (area[i][j] == 2) {
-					Rect{ 50 + 100 * j,i * 100 + 5,100,100 }.draw(Palette::Red).drawFrame(3, 0);
+				if (!(j == houseX && i == houseY)) {
+					if (area[i][j] == 0) {
+						Rect{ 50 + 100 * j,i * 100 + 5,100,100 }.draw(Palette::Gray).drawFrame(3, 0);
+					}
+					else if (area[i][j] == 1) {
+						Rect{ 50 + 100 * j,i * 100 + 5,100,100 }.draw(Palette::Blue).drawFrame(3, 0);
+					}
+					else if (area[i][j] == 2) {
+						Rect{ 50 + 100 * j,i * 100 + 5,100,100 }.draw(Palette::Red).drawFrame(3, 0);
+					}
 				}
 			}
 		}
@@ -338,6 +367,9 @@ public:
 		//// プレイヤーテクスチャを指定の位置で回転して描画
 		enemytexture.scaled(0.7).rotated(90_deg).drawAt(enemyPos);
 		dogtexture.scaled(0.7).rotated(90_deg).drawAt(playerPos);
+
+		///家
+		housetexture.scaled(0.7).drawAt(houseX * 100 + 100, houseY * 100 + 50);
 
 		// 自機ショットを描画する
 		for (const auto& playerBullet : playerBullets)
