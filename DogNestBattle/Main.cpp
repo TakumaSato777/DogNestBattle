@@ -28,9 +28,11 @@ public:
 			Print << U"自機弾: " << playerBullets.size();
 			Print << U"敵機弾: " << enemyBullets.size();
 			Print << U"アイテムの個数: " << items.size();
-			Print << U"timeAccumulator: " << timeAccumulator;
+			Print << U"アイテムのクールダウン: " << timeAccumulator;
 			Print << U"クールダウン: " << cooldownTime;
 			Print << U"弾速度: " << BulletSpeed;
+			Print << U"家にぶつかった回数: " << houseCount;
+			Print << U"HP: " << hp;
 		}
 		const double deltaTime = Scene::DeltaTime();
 
@@ -100,18 +102,23 @@ public:
 			}
 
 			///家関連
-			if (Rect{ 50 + 100 * houseX,houseY * 100 + 5,100,5 }.intersects(BulletCircle)) {///上辺との接触
+			if (Quad{ Vec2{50 + 100 * houseX,5 + 100 * houseY},Vec2{55 + 100 * houseX,10 + 100 * houseY},Vec2{145 + 100 * houseX,10 + 100 * houseY},Vec2{150 + 100 * houseX,5 + 100 * houseY} }.intersects(BulletCircle)) {///上辺との接触
 				playerBullet.velocity.y *= -1;
+				houseCount++;
 			}
-			if (Rect{ 150 + 100 * houseX,houseY * 100 + 5,5,100 }.intersects(BulletCircle)) {///右辺との接触
+			if (Quad{ Vec2{50 + 100 * houseX,5 + 100 * houseY},Vec2{55 + 100 * houseX,10 + 100 * houseY},Vec2{55 + 100 * houseX,100 + 100 * houseY},Vec2{50 + 100 * houseX,105 + 100 * houseY} }.intersects(BulletCircle)) {///左辺との接触
 				playerBullet.velocity.x *= -1;
+				houseCount++;
 			}
-			if (Rect{ 50 + 100 * houseX,houseY * 100 + 5,5,100 }.intersects(BulletCircle)) {///左辺との接触
-				playerBullet.velocity.x *= -1;
-			}
-			if (Rect{ 50 + 100 * houseX,houseY * 100 + 55,100,5 }.intersects(BulletCircle)) {///下辺との接触
+			if (Quad{ Vec2{55 + 100 * houseX,100 + 100 * houseY},Vec2{50 + 100 * houseX,105 + 100 * houseY},Vec2{150 + 100 * houseX,105 + 100 * houseY},Vec2{145 + 100 * houseX,100 + 100 * houseY} }.intersects(BulletCircle)) {///下辺との接触
 				playerBullet.velocity.y *= -1;
+				houseCount++;
 			}
+			if (Quad{ Vec2{145 + 100 * houseX,10 + 100 * houseY},Vec2{150 + 100 * houseX,5 + 100 * houseY},Vec2{150 + 100 * houseX,105 + 100 * houseY},Vec2{145 + 100 * houseX,100 + 100 * houseY} }.intersects(BulletCircle)) {///右辺との接触
+				playerBullet.velocity.x *= -1;
+				houseCount++;
+			}
+
 
 			playerBullet.pos += playerBullet.velocity * deltaTime;
 		}
@@ -167,17 +174,17 @@ public:
 			}
 
 			///家関連
-			if (Rect{ 50 + 100 * houseX,houseY * 100 + 5,100,5 }.intersects(BulletCircle)) {///上辺との接触
+			if (Quad{ Vec2{50 + 100 * houseX,5 + 100 * houseY},Vec2{55 + 100 * houseX,10 + 100 * houseY},Vec2{145 + 100 * houseX,10 + 100 * houseY},Vec2{150 + 100 * houseX,5 + 100 * houseY}}.intersects(BulletCircle)) {///上辺との接触
 				enemyBullet.velocity.y *= -1;
 			}
-			if (Rect{ 150 + 100 * houseX,houseY * 100 + 5,5,100 }.intersects(BulletCircle)) {///右辺との接触
+			if (Quad{ Vec2{50 + 100 * houseX,5 + 100 * houseY},Vec2{55 + 100 * houseX,10 + 100 * houseY},Vec2{55 + 100 * houseX,100 + 100 * houseY},Vec2{50 + 100 * houseX,105 + 100 * houseY} }.intersects(BulletCircle)) {///左辺との接触
 				enemyBullet.velocity.x *= -1;
 			}
-			if (Rect{ 50 + 100 * houseX,houseY * 100 + 5,5,100 }.intersects(BulletCircle)) {///左辺との接触
-				enemyBullet.velocity.x *= -1;
-			}
-			if (Rect{ 50 + 100 * houseX,houseY * 100 + 55,100,5 }.intersects(BulletCircle)) {///下辺との接触
+			if (Quad{ Vec2{55 + 100 * houseX,100 + 100 * houseY},Vec2{50 + 100 * houseX,105 + 100 * houseY},Vec2{150 + 100 * houseX,105 + 100 * houseY},Vec2{145 + 100 * houseX,100 + 100 * houseY} }.intersects(BulletCircle)) {///下辺との接触
 				enemyBullet.velocity.y *= -1;
+			}
+			if (Quad{ Vec2{145 + 100 * houseX,10 + 100 * houseY},Vec2{150 + 100 * houseX,5 + 100 * houseY},Vec2{150 + 100 * houseX,105 + 100 * houseY},Vec2{145 + 100 * houseX,100 + 100 * houseY}}.intersects(BulletCircle)) {///右辺との接触
+				enemyBullet.velocity.x *= -1;
 			}
 
 			enemyBullet.pos += enemyBullet.velocity * deltaTime;
@@ -296,6 +303,25 @@ public:
 			}
 		}
 
+		/////プレイヤーと猫の当たり判定
+		for (auto it = cats.begin(); it != cats.end(); ) {
+			Circle catCircle{ it->pos, 30 };
+			bool intersectionFound = false;
+			Circle playerCircle{ playerPos, 30 };
+
+			if (playerCircle.intersects(catCircle)) {
+				// 削除する要素の位置を記録
+				it = cats.erase(it);
+				intersectionFound = true;
+				hp--;
+				break;
+			}
+			// もし交差が見つからなかった場合、イテレータを更新
+			if (!intersectionFound) {
+				++it;
+			}
+		}
+
 		///画面外の猫削除
 		cats.remove_if([](const Cat& cat) { return (900 < cat.pos.x); });
 		cats.remove_if([](const Cat& cat) { return (-100 > cat.pos.x); });
@@ -358,6 +384,8 @@ public:
 			}
 		}
 
+		Rect{ 50 + 100 * houseX,houseY * 100 + 5,100,100 }.drawFrame(3, 0);
+
 		for (const auto& item : items)
 		{
 			// アイテムを描く（サイズは 0.5 倍）
@@ -370,6 +398,12 @@ public:
 
 		///家
 		housetexture.scaled(0.7).drawAt(houseX * 100 + 100, houseY * 100 + 50);
+
+		///家関連デバック用
+		/*Quad{ Vec2{50 + 100 * houseX,5 + 100 * houseY},Vec2{55 + 100 * houseX,10 + 100 * houseY},Vec2{145 + 100 * houseX,10 + 100 * houseY},Vec2{150 + 100 * houseX,5 + 100 * houseY} }.draw(Palette::Skyblue);///上
+		Quad{ Vec2{50 + 100 * houseX,5 + 100 * houseY},Vec2{55 + 100 * houseX,10 + 100 * houseY},Vec2{55 + 100 * houseX,100 + 100 * houseY},Vec2{50 + 100 * houseX,105 + 100 * houseY} }.draw(Palette::Skyblue);///左
+		Quad{ Vec2{55 + 100 * houseX,100 + 100 * houseY},Vec2{50 + 100 * houseX,105 + 100 * houseY},Vec2{150 + 100 * houseX,105 + 100 * houseY},Vec2{145 + 100 * houseX,100 + 100 * houseY} }.draw(Palette::Skyblue);///下
+		Quad{ Vec2{145 + 100 * houseX,10 + 100 * houseY},Vec2{150 + 100 * houseX,5 + 100 * houseY},Vec2{150 + 100 * houseX,105 + 100 * houseY},Vec2{145 + 100 * houseX,100 + 100 * houseY} }.draw(Palette::Skyblue);///右*/
 
 		// 自機ショットを描画する
 		for (const auto& playerBullet : playerBullets)
@@ -407,6 +441,8 @@ private:
 	const InputGroup rightInput = (KeyRight | KeyD);
 	const InputGroup upInput = (KeyUp | KeyW);
 	const InputGroup downInput = (KeyDown | KeyS);
+	///ヘルス
+	int32 hp = 3;
 
 	///弾関連
 	struct Bullet {
@@ -471,12 +507,14 @@ private:
 	// 前回の食べ物の出現から何秒経過したか
 	double catAccumulator = 0.0;
 
+
 	///陣地関連
 	Grid<int32> area;
 
 	///家関連
 	int32 houseX = 0;
 	int32 houseY = 0;
+	int32 houseCount = 0;
 	Texture housetexture{ U"🏡"_emoji };
 
 	bool hantei = true;
