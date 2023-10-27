@@ -1,7 +1,29 @@
 ﻿# include <Siv3D.hpp> // OpenSiv3D v0.6.11
-using App = SceneManager<String>;
 
-// 食べ物の種類
+struct GameData
+{
+	int32 hp = 3;
+	int32 GameCount = 0;
+	///陣地関連
+	Grid<int32> area;
+
+	///家関連
+	int32 houseX = 0;
+	int32 houseY = 0;
+	int32 houseCount = 0;
+	// 自機ショットのスピード
+	double BulletSpeed = 500.0;
+	// 弾のクールダウン時間（秒単位）を設定
+	double cooldownTime = 2.0;
+
+	///敵機ステータスd
+	double enemyBulletSpeed = 600.0;
+	double enemycooldownTime = 3.0;
+};
+
+using App = SceneManager<String,GameData>;
+
+// アイテムの種類
 constexpr size_t NumItems = 2;
 
 // ゲームシーン
@@ -12,9 +34,12 @@ public:
 	Game(const InitData& init)
 		: IScene{ init }
 	{
-		area.resize(7,3,0);
-		houseX = Random(6);
-		houseY = Random(2);
+		if (getData().GameCount == 0) {
+			getData().area.resize(7, 3, 0);
+			getData().houseX = Random(6);
+			getData().houseY = Random(2);
+		}
+		getData().GameCount++;
 	}
 
 	~Game()
@@ -29,10 +54,10 @@ public:
 			Print << U"敵機弾: " << enemyBullets.size();
 			Print << U"アイテムの個数: " << items.size();
 			Print << U"アイテムのクールダウン: " << timeAccumulator;
-			Print << U"クールダウン: " << cooldownTime;
-			Print << U"弾速度: " << BulletSpeed;
-			Print << U"家にぶつかった回数: " << houseCount;
-			Print << U"HP: " << hp;
+			Print << U"クールダウン: " << getData().cooldownTime;
+			Print << U"弾速度: " << getData().BulletSpeed;
+			Print << U"家にぶつかった回数: " << getData().houseCount;
+			Print << U"HP: " << getData().hp;
 		}
 		const double deltaTime = Scene::DeltaTime();
 
@@ -70,14 +95,14 @@ public:
 		// 自機ショットの発射
 		// 現在の時刻を取得
 		const double currentTime = Scene::Time();
-		if (currentTime - lastShootTime >= cooldownTime)
+		if (currentTime - lastShootTime >= getData().cooldownTime)
 		{
 			if (MouseL.down()) {
 
 				Vec2 cursorPos = Cursor::Pos();
 				Vec2 direction = (cursorPos - playerPos).normalized(); // プレイヤーからカーソルへの正規化されたベクトル
 
-				Vec2 bulletVelocity = direction * BulletSpeed;
+				Vec2 bulletVelocity = direction * getData().BulletSpeed;
 
 				playerBullets << Bullet(playerPos.movedBy(0, -50), bulletVelocity);
 				lastShootTime = currentTime;
@@ -102,21 +127,21 @@ public:
 			}
 
 			///家関連
-			if (Quad{ Vec2{50 + 100 * houseX,5 + 100 * houseY},Vec2{55 + 100 * houseX,10 + 100 * houseY},Vec2{145 + 100 * houseX,10 + 100 * houseY},Vec2{150 + 100 * houseX,5 + 100 * houseY} }.intersects(BulletCircle)) {///上辺との接触
+			if (Quad{ Vec2{50 + 100 * getData().houseX,5 + 100 * getData().houseY},Vec2{55 + 100 * getData().houseX,10 + 100 * getData().houseY},Vec2{145 + 100 * getData().houseX,10 + 100 * getData().houseY},Vec2{150 + 100 * getData().houseX,5 + 100 * getData().houseY} }.intersects(BulletCircle)) {///上辺との接触
 				playerBullet.velocity.y *= -1;
-				houseCount++;
+				getData().houseCount++;
 			}
-			if (Quad{ Vec2{50 + 100 * houseX,5 + 100 * houseY},Vec2{55 + 100 * houseX,10 + 100 * houseY},Vec2{55 + 100 * houseX,100 + 100 * houseY},Vec2{50 + 100 * houseX,105 + 100 * houseY} }.intersects(BulletCircle)) {///左辺との接触
+			if (Quad{ Vec2{50 + 100 * getData().houseX,5 + 100 * getData().houseY},Vec2{55 + 100 * getData().houseX,10 + 100 * getData().houseY},Vec2{55 + 100 * getData().houseX,100 + 100 * getData().houseY},Vec2{50 + 100 * getData().houseX,105 + 100 * getData().houseY} }.intersects(BulletCircle)) {///左辺との接触
 				playerBullet.velocity.x *= -1;
-				houseCount++;
+				getData().houseCount++;
 			}
-			if (Quad{ Vec2{55 + 100 * houseX,100 + 100 * houseY},Vec2{50 + 100 * houseX,105 + 100 * houseY},Vec2{150 + 100 * houseX,105 + 100 * houseY},Vec2{145 + 100 * houseX,100 + 100 * houseY} }.intersects(BulletCircle)) {///下辺との接触
+			if (Quad{ Vec2{55 + 100 * getData().houseX,100 + 100 * getData().houseY},Vec2{50 + 100 * getData().houseX,105 + 100 * getData().houseY},Vec2{150 + 100 * getData().houseX,105 + 100 * getData().houseY},Vec2{145 + 100 * getData().houseX,100 + 100 * getData().houseY} }.intersects(BulletCircle)) {///下辺との接触
 				playerBullet.velocity.y *= -1;
-				houseCount++;
+				getData().houseCount++;
 			}
-			if (Quad{ Vec2{145 + 100 * houseX,10 + 100 * houseY},Vec2{150 + 100 * houseX,5 + 100 * houseY},Vec2{150 + 100 * houseX,105 + 100 * houseY},Vec2{145 + 100 * houseX,100 + 100 * houseY} }.intersects(BulletCircle)) {///右辺との接触
+			if (Quad{ Vec2{145 + 100 * getData().houseX,10 + 100 * getData().houseY},Vec2{150 + 100 * getData().houseX,5 + 100 * getData().houseY},Vec2{150 + 100 * getData().houseX,105 + 100 * getData().houseY},Vec2{145 + 100 * getData().houseX,100 + 100 * getData().houseY} }.intersects(BulletCircle)) {///右辺との接触
 				playerBullet.velocity.x *= -1;
-				houseCount++;
+				getData().houseCount++;
 			}
 
 
@@ -135,9 +160,9 @@ public:
 
 			for (int32 i = 0; i < 3; i++) {
 				for (int32 j = 0; j < 7; j++) {
-					if (!(j == houseX && i == houseY)) {
+					if (!(j == getData().houseX && i == getData().houseY)) {
 						if (Rect{ 50 + 100 * j,i * 100 + 5,100,100 }.intersects(BulletCircle)) {
-							area[i][j] = 1;
+							getData().area[i][j] = 1;
 						}
 					}
 				}
@@ -146,12 +171,12 @@ public:
 
 		// 敵機ショットの発射
 		// 現在の時刻を取得
-		if (currentTime - enemylastShootTime >= enemycooldownTime){
+		if (currentTime - enemylastShootTime >= getData().enemycooldownTime){
 
 			Vec2 enemyAim = {Random(800),Random(500.0)};
 
 			Vec2 direction = (enemyAim - enemyPos).normalized(); // 敵からランダムな位置への正規化されたベクトル
-			Vec2 enemybulletVelocity = direction * enemyBulletSpeed;
+			Vec2 enemybulletVelocity = direction * getData().enemyBulletSpeed;
 			enemyBullets << Bullet(enemyPos.movedBy(0, -50), enemybulletVelocity);
 			enemylastShootTime = currentTime;
 		}
@@ -174,16 +199,16 @@ public:
 			}
 
 			///家関連
-			if (Quad{ Vec2{50 + 100 * houseX,5 + 100 * houseY},Vec2{55 + 100 * houseX,10 + 100 * houseY},Vec2{145 + 100 * houseX,10 + 100 * houseY},Vec2{150 + 100 * houseX,5 + 100 * houseY}}.intersects(BulletCircle)) {///上辺との接触
+			if (Quad{ Vec2{50 + 100 * getData().houseX,5 + 100 * getData().houseY},Vec2{55 + 100 * getData().houseX,10 + 100 * getData().houseY},Vec2{145 + 100 * getData().houseX,10 + 100 * getData().houseY},Vec2{150 + 100 * getData().houseX,5 + 100 * getData().houseY}}.intersects(BulletCircle)) {///上辺との接触
 				enemyBullet.velocity.y *= -1;
 			}
-			if (Quad{ Vec2{50 + 100 * houseX,5 + 100 * houseY},Vec2{55 + 100 * houseX,10 + 100 * houseY},Vec2{55 + 100 * houseX,100 + 100 * houseY},Vec2{50 + 100 * houseX,105 + 100 * houseY} }.intersects(BulletCircle)) {///左辺との接触
+			if (Quad{ Vec2{50 + 100 * getData().houseX,5 + 100 * getData().houseY},Vec2{55 + 100 * getData().houseX,10 + 100 * getData().houseY},Vec2{55 + 100 * getData().houseX,100 + 100 * getData().houseY},Vec2{50 + 100 * getData().houseX,105 + 100 * getData().houseY} }.intersects(BulletCircle)) {///左辺との接触
 				enemyBullet.velocity.x *= -1;
 			}
-			if (Quad{ Vec2{55 + 100 * houseX,100 + 100 * houseY},Vec2{50 + 100 * houseX,105 + 100 * houseY},Vec2{150 + 100 * houseX,105 + 100 * houseY},Vec2{145 + 100 * houseX,100 + 100 * houseY} }.intersects(BulletCircle)) {///下辺との接触
+			if (Quad{ Vec2{55 + 100 * getData().houseX,100 + 100 * getData().houseY},Vec2{50 + 100 * getData().houseX,105 + 100 * getData().houseY},Vec2{150 + 100 * getData().houseX,105 + 100 * getData().houseY},Vec2{145 + 100 * getData().houseX,100 + 100 * getData().houseY} }.intersects(BulletCircle)) {///下辺との接触
 				enemyBullet.velocity.y *= -1;
 			}
-			if (Quad{ Vec2{145 + 100 * houseX,10 + 100 * houseY},Vec2{150 + 100 * houseX,5 + 100 * houseY},Vec2{150 + 100 * houseX,105 + 100 * houseY},Vec2{145 + 100 * houseX,100 + 100 * houseY}}.intersects(BulletCircle)) {///右辺との接触
+			if (Quad{ Vec2{145 + 100 * getData().houseX,10 + 100 * getData().houseY},Vec2{150 + 100 * getData().houseX,5 + 100 * getData().houseY},Vec2{150 + 100 * getData().houseX,105 + 100 * getData().houseY},Vec2{145 + 100 * getData().houseX,100 + 100 * getData().houseY}}.intersects(BulletCircle)) {///右辺との接触
 				enemyBullet.velocity.x *= -1;
 			}
 
@@ -201,13 +226,22 @@ public:
 
 			for (int32 i = 0; i < 3; i++) {
 				for (int32 j = 0; j < 7; j++) {
-					if (!(j == houseX && i == houseY)) {
+					if (!(j == getData().houseX && i == getData().houseY)) {
 						if (Rect{ 50 + 100 * j,i * 100 + 5,100,100 }.intersects(BulletCircle)) {
-							area[i][j] = 2;
+							getData().area[i][j] = 2;
 						}
 					}
 				}
 			}
+		}
+
+		///敵機ステータス更新
+		if (currentTime - statuslastupdateTime >= statuscooldownTime) {
+
+			getData().enemyBulletSpeed += 100.0;
+			getData().enemycooldownTime -= 0.2;
+			if (getData().enemycooldownTime < 0.2) getData().enemycooldownTime = 0.1;
+			statuslastupdateTime = currentTime;
 		}
 
 		///アイテム関連
@@ -238,11 +272,11 @@ public:
 			Circle itemCircle{ it->pos, 30 };
 			if (playerCircle.intersects(itemCircle)) {
 				if (it->type == 0) {
-					BulletSpeed += 100.0;
+					getData().BulletSpeed += 100.0;
 				}
 				else {
-					cooldownTime -= 0.5;
-					if (cooldownTime < 0.5) cooldownTime = 0.5;
+					getData().cooldownTime -= 0.5;
+					if (getData().cooldownTime < 0.5) getData().cooldownTime = 0.1;
 				}
 				// 削除する要素
 				it = items.erase(it);
@@ -313,7 +347,7 @@ public:
 				// 削除する要素の位置を記録
 				it = cats.erase(it);
 				intersectionFound = true;
-				hp--;
+				changeScene(U"Neko");
 				break;
 			}
 			// もし交差が見つからなかった場合、イテレータを更新
@@ -331,8 +365,8 @@ public:
 
 		for (int32 i = 0; i < 3; i++) {
 			for (int32 j = 0; j < 7; j++) {
-				if (!(j == houseX && i == houseY)) {
-					if (area[i][j] != 1) hantei = false;
+				if (!(j == getData().houseX && i == getData().houseY)) {
+					if (getData().area[i][j] != 1) hantei = false;
 				}
 			}
 		}
@@ -346,8 +380,8 @@ public:
 
 		for (int32 i = 0; i < 3; i++) {
 			for (int32 j = 0; j < 7; j++) {
-				if (!(j == houseX && i == houseY)) {
-					if (area[i][j] != 2) hantei = false;
+				if (!(j == getData().houseX && i == getData().houseY)) {
+					if (getData().area[i][j] != 2) hantei = false;
 				}
 			}
 		}
@@ -370,21 +404,21 @@ public:
 
 		for (int32 i = 0; i < 3; i++) {
 			for (int32 j = 0; j < 7; j++) {
-				if (!(j == houseX && i == houseY)) {
-					if (area[i][j] == 0) {
+				if (!(j == getData().houseX && i == getData().houseY)) {
+					if (getData().area[i][j] == 0) {
 						Rect{ 50 + 100 * j,i * 100 + 5,100,100 }.draw(Palette::Gray).drawFrame(3, 0);
 					}
-					else if (area[i][j] == 1) {
+					else if (getData().area[i][j] == 1) {
 						Rect{ 50 + 100 * j,i * 100 + 5,100,100 }.draw(Palette::Blue).drawFrame(3, 0);
 					}
-					else if (area[i][j] == 2) {
+					else if (getData().area[i][j] == 2) {
 						Rect{ 50 + 100 * j,i * 100 + 5,100,100 }.draw(Palette::Red).drawFrame(3, 0);
 					}
 				}
 			}
 		}
 
-		Rect{ 50 + 100 * houseX,houseY * 100 + 5,100,100 }.drawFrame(3, 0);
+		Rect{ 50 + 100 * getData().houseX,getData().houseY * 100 + 5,100,100 }.drawFrame(3, 0);
 
 		for (const auto& item : items)
 		{
@@ -396,14 +430,15 @@ public:
 		enemytexture.scaled(0.7).rotated(90_deg).drawAt(enemyPos);
 		dogtexture.scaled(0.7).rotated(90_deg).drawAt(playerPos);
 
-		///家
-		housetexture.scaled(0.7).drawAt(houseX * 100 + 100, houseY * 100 + 50);
+		// 猫を描画する
+		for (const auto& cat : cats)
+		{
+			if (cat.type == 0) cattexture.mirrored().scaled(0.5).drawAt(cat.pos);
+			else cattexture.scaled(0.5).drawAt(cat.pos);
+		}
 
-		///家関連デバック用
-		/*Quad{ Vec2{50 + 100 * houseX,5 + 100 * houseY},Vec2{55 + 100 * houseX,10 + 100 * houseY},Vec2{145 + 100 * houseX,10 + 100 * houseY},Vec2{150 + 100 * houseX,5 + 100 * houseY} }.draw(Palette::Skyblue);///上
-		Quad{ Vec2{50 + 100 * houseX,5 + 100 * houseY},Vec2{55 + 100 * houseX,10 + 100 * houseY},Vec2{55 + 100 * houseX,100 + 100 * houseY},Vec2{50 + 100 * houseX,105 + 100 * houseY} }.draw(Palette::Skyblue);///左
-		Quad{ Vec2{55 + 100 * houseX,100 + 100 * houseY},Vec2{50 + 100 * houseX,105 + 100 * houseY},Vec2{150 + 100 * houseX,105 + 100 * houseY},Vec2{145 + 100 * houseX,100 + 100 * houseY} }.draw(Palette::Skyblue);///下
-		Quad{ Vec2{145 + 100 * houseX,10 + 100 * houseY},Vec2{150 + 100 * houseX,5 + 100 * houseY},Vec2{150 + 100 * houseX,105 + 100 * houseY},Vec2{145 + 100 * houseX,100 + 100 * houseY} }.draw(Palette::Skyblue);///右*/
+		///家
+		housetexture.scaled(0.7).drawAt(getData().houseX * 100 + 100, getData().houseY * 100 + 50);
 
 		// 自機ショットを描画する
 		for (const auto& playerBullet : playerBullets)
@@ -416,15 +451,6 @@ public:
 		{
 			enemypadtexture.scaled(0.1).drawAt(enemyBullet.pos);
 		}
-
-
-		// 猫を描画する
-		for (const auto& cat : cats)
-		{
-			if(cat.type == 0) cattexture.mirrored().scaled(0.5).drawAt(cat.pos);
-			else cattexture.scaled(0.5).drawAt(cat.pos);
-		}
-
 	}
 
 private:
@@ -441,8 +467,6 @@ private:
 	const InputGroup rightInput = (KeyRight | KeyD);
 	const InputGroup upInput = (KeyUp | KeyW);
 	const InputGroup downInput = (KeyDown | KeyS);
-	///ヘルス
-	int32 hp = 3;
 
 	///弾関連
 	struct Bullet {
@@ -453,17 +477,18 @@ private:
 	};
 	// 自機ショット
 	Array<Bullet> playerBullets;
-	// 自機ショットのスピード
-	double BulletSpeed = 500.0;
-	// 弾のクールダウン時間（秒単位）を設定
-	double cooldownTime = 2.0;
+	
 	double lastShootTime = 0.0;
 
 	///敵機ショット
 	Array<Bullet> enemyBullets;
-	double enemyBulletSpeed = 500.0;
-	double enemycooldownTime = 3.0;
+	/*double enemyBulletSpeed = 500.0;
+	double enemycooldownTime = 3.0;*/
 	double enemylastShootTime = 0.0;
+
+	///敵機ステータス更新
+	double statuscooldownTime = 20.0;
+	double statuslastupdateTime = 0.0;
 
 	///アイテム関連
 	struct Item
@@ -478,12 +503,12 @@ private:
 	{
 		Texture{ Emoji{ U"🦴" }},
 		Texture{ Emoji{ U"🍖" }},
-	};
+	};ddd
 
 	// アイテムが毎秒何ピクセルの速さで落下するか
-	double itemSpeed = 200.0;
+	double itemSpeed = 400.0;
 	// 何秒ごとにアイテムが出現するか
-	double itemSpawnTime = 5.0;
+	double itemSpawnTime = 2.5;
 	// 前回の食べ物の出現から何秒経過したか
 	double timeAccumulator = 0.0;
 
@@ -499,25 +524,255 @@ private:
 	Texture cattexture{ U"🐈"_emoji };
 
 	// 猫が毎秒何ピクセルの速さで移動するか
-	double catSpeed = 200.0;
+	double catSpeed = 750.0;
 	// 前回の猫の出現から何秒経過したか
 	double cattimeAccumulator = 0.0;
 	// 何秒ごとに猫が出現するか
-	double catSpawnTime = 1.0;
+	double catSpawnTime = 10.0;
 	// 前回の食べ物の出現から何秒経過したか
 	double catAccumulator = 0.0;
 
 
-	///陣地関連
+	/*///陣地関連
 	Grid<int32> area;
 
 	///家関連
 	int32 houseX = 0;
 	int32 houseY = 0;
-	int32 houseCount = 0;
+	int32 houseCount = 0;*/
 	Texture housetexture{ U"🏡"_emoji };
 
 	bool hantei = true;
+};
+
+// 猫バトルシーン
+class Neko : public App::Scene
+{
+public:
+
+	// コンストラクタ（必ず実装）
+	Neko(const InitData& init)
+		: IScene{ init }
+	{
+	}
+
+	~Neko()
+	{
+	}
+
+
+	// 更新関数（オプション）
+	void update() override
+	{
+		{
+			ClearPrint();
+			Print << U"自機弾: " << playerBullets.size();
+			Print << U"敵機弾: " << enemyBullets.size();
+			Print << U"クールダウン: " << getData().cooldownTime;
+			Print << U"弾速度: " << getData().BulletSpeed;
+			Print << U"HP: " << getData().hp;
+		}
+		const double deltaTime = Scene::DeltaTime();
+
+		// 右矢印キーが押されているかをチェック
+		if (rightInput.pressed())
+		{
+			// 経過時間に応じて移動
+			playerPos.x += moveSpeed * deltaTime;
+		}
+
+		if (leftInput.pressed())
+		{
+			// 経過時間に応じて移動
+			playerPos.x -= moveSpeed * deltaTime;
+		}
+
+		playerPos.x = Clamp(playerPos.x, 100.0, 700.0);
+
+		///敵制御
+
+		// 物体が左壁に到達したら右に向かせる
+		if (enemyPos.x < 100)
+		{
+			enemySpeed = abs(enemySpeed); // 絶対値に変更
+		}
+		// 物体が右壁に到達したら左に向かせる
+		else if (enemyPos.x > 700)
+		{
+			enemySpeed = -abs(enemySpeed); // 絶対値に変更
+		}
+
+		enemyPos.x += enemySpeed * deltaTime;
+
+		///弾発射
+		// 自機ショットの発射
+		// 現在の時刻を取得
+		const double currentTime = Scene::Time();
+		if (currentTime - lastShootTime >= getData().cooldownTime)
+		{
+			if (MouseL.down()) {
+
+				Vec2 cursorPos = Cursor::Pos();
+				Vec2 direction = (cursorPos - playerPos).normalized(); // プレイヤーからカーソルへの正規化されたベクトル
+
+				Vec2 bulletVelocity = direction * getData().BulletSpeed;
+
+				playerBullets << Bullet(playerPos.movedBy(0, -50), bulletVelocity);
+				lastShootTime = currentTime;
+			}
+		}
+
+		// 自機ショットを移動させる
+		for (auto& playerBullet : playerBullets)
+		{
+			// 弾のあたり判定円
+			const Circle BulletCircle{ playerBullet.pos, 30 };
+
+			if (playerBullet.pos.y < 0 && playerBullet.velocity.y < 0 || 590 < playerBullet.pos.y && playerBullet.velocity.y > 0)
+			{
+				playerBullet.velocity.y *= -1;
+			}
+			// 左右の壁にぶつかったらはね返る
+			if (playerBullet.pos.x < 50 && playerBullet.velocity.x < 0 || 750 < playerBullet.pos.x && 0 < playerBullet.velocity.x)
+			{
+				playerBullet.velocity.x *= -1;
+			}
+
+			playerBullet.pos += playerBullet.velocity * deltaTime;
+		}
+
+		// 画面外に出た自機ショットを削除するa
+		playerBullets.remove_if([](const Bullet& bullet) { return (700 < bullet.pos.y); });
+
+		// イテレータで全ての弾をたどる
+		for (auto& playerBullet : playerBullets)
+		{
+			// 弾のあたり判定円
+			const Circle BulletCircle{ playerBullet.pos, 30 };
+			// 敵のあたり判定円
+			const Circle NekoCircle{ enemyPos, 30 };
+			if (BulletCircle.intersects(NekoCircle)) {
+				changeScene(U"Game");
+			}
+
+		}
+
+		// 敵機ショットの発射
+		// 現在の時刻を取得
+		if (currentTime - enemylastShootTime >= enemycooldownTime) {
+
+			Vec2 enemyAim = playerPos;
+
+			Vec2 direction = (enemyAim - enemyPos).normalized(); // 敵からランダムな位置への正規化されたベクトル
+			Vec2 enemybulletVelocity = direction * enemyBulletSpeed;
+			enemyBullets << Bullet(enemyPos.movedBy(0, 50), enemybulletVelocity);
+			enemylastShootTime = currentTime;
+		}
+
+		// 敵機ショットを移動させる
+		for (auto& enemyBullet : enemyBullets)
+		{
+			if (enemyBullet.pos.y < 0 && enemyBullet.velocity.y < 0 || 590 < enemyBullet.pos.y && enemyBullet.velocity.y > 0)
+			{
+				enemyBullet.velocity.y *= -1;
+			}
+
+			// 左右の壁にぶつかったらはね返る
+			if (enemyBullet.pos.x < 50 && enemyBullet.velocity.x < 0 || 750 < enemyBullet.pos.x && 0 < enemyBullet.velocity.x)
+			{
+				enemyBullet.velocity.x *= -1;
+			}
+
+			enemyBullet.pos += enemyBullet.velocity * deltaTime;
+		}
+
+		// イテレータで全ての敵の弾をたどる
+		for (auto& enemyBullet : enemyBullets)
+		{
+			// 弾のあたり判定円
+			const Circle BulletCircle{ enemyBullet.pos, 30 };
+			// プレイヤーのあたり判定円
+			const Circle playerCircle{ playerPos, 30 };
+			if (BulletCircle.intersects(playerCircle)) {
+				getData().hp--;
+				changeScene(U"Game");
+			}
+
+		}
+
+		// 画面外に出た敵機ショットを削除する
+		enemyBullets.remove_if([](const Bullet& bullet) { return (700 < bullet.pos.y); });
+	}
+
+	// 描画関数（オプション）
+	void draw() const override
+	{
+		Scene::SetBackground(ColorF{ 0.3, 0.4, 0.5 });
+
+		font(U"猫バトル").draw();
+
+		///壁
+		Rect{ 45,0,5,600 }.draw(Palette::Pink);
+		Rect{ 45,0,705,5 }.draw(Palette::Pink);
+		Rect{ 750,0,5,600 }.draw(Palette::Pink);
+		Rect{ 45,595,700,5 }.draw(Palette::Pink);
+
+		//// プレイヤーテクスチャを指定の位置で回転して描画
+		enemytexture.scaled(0.7).rotated(90_deg).drawAt(enemyPos);
+		dogtexture.scaled(0.7).rotated(90_deg).drawAt(playerPos);
+
+		// 自機ショットを描画する
+		for (const auto& playerBullet : playerBullets)
+		{
+			padtexture.scaled(0.1).drawAt(playerBullet.pos);
+		}
+
+		// 敵機ショットを描画する
+		for (const auto& enemyBullet : enemyBullets)
+		{
+			enemypadtexture.scaled(0.1).drawAt(enemyBullet.pos);
+		}
+	}
+
+private:
+	/// 基本サイズ 50 のフォントを作成
+	Font font = Font(100);
+	Texture dogtexture{ U"🐕"_emoji };
+	Texture enemytexture{ U"🐈"_emoji };
+	Texture padtexture{ U"material/nikukyu_kuro.png" };
+	Texture enemypadtexture{ U"material/nikukyu_pink.png" };
+	Vec2 playerPos{ 400,550 };
+	Vec2 enemyPos{ 400,50 };
+	//移動する速度を設定
+	double moveSpeed = 300.0;
+	double enemySpeed = 300.0;
+	const InputGroup leftInput = (KeyLeft | KeyA);
+	const InputGroup rightInput = (KeyRight | KeyD);
+	const InputGroup upInput = (KeyUp | KeyW);
+	const InputGroup downInput = (KeyDown | KeyS);
+
+	///弾関連
+	struct Bullet {
+		Vec2 pos; // 弾の位置
+		Vec2 velocity; // 弾の速度
+
+		Bullet(Vec2 _pos, Vec2 _velocity) : pos(_pos), velocity(_velocity) {}
+	};
+	// 自機ショット
+	Array<Bullet> playerBullets;
+	//// 自機ショットのスピード
+	//double BulletSpeed = 500.0;
+	//// 弾のクールダウン時間（秒単位）を設定
+	//double cooldownTime = 5.0;
+	double lastShootTime = 10.0;
+
+	///敵機ショット
+	Array<Bullet> enemyBullets;
+	double enemyBulletSpeed = 1000.0;
+	double enemycooldownTime = 1.0;
+	double enemylastShootTime = 10.0;
+
+	RectF shape{ 50, 100, 700, 600 };
 };
 
 // エンドシーン
@@ -540,11 +795,7 @@ public:
 	// 更新関数（オプション）
 	void update() override
 	{
-		if (MouseL.down())
-		{
-			// Gameシーンに遷移
-			changeScene(U"Game");
-		}
+		
 	}
 
 	// 描画関数（オプション）
@@ -567,7 +818,7 @@ void Main()
 	App manager;
 	manager.add<Game>(U"Game");
 	manager.add<End>(U"End");
-
+	manager.add<Neko>(U"Neko");
 	// "Game" シーンから開始
 	manager.init(U"Game");
 
