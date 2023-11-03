@@ -16,15 +16,124 @@ struct GameData
 	// 弾のクールダウン時間（秒単位）を設定
 	double cooldownTime = 2.0;
 
-	///敵機ステータスd
-	double enemyBulletSpeed = 600.0;
-	double enemycooldownTime = 3.0;
+	///敵機ステータス
+	double enemyBulletSpeed = 800.0;
+	double enemycooldownTime = 2.0;
+
+	///エンド判定
+	int32 end = 0;
 };
 
 using App = SceneManager<String,GameData>;
 
 // アイテムの種類
 constexpr size_t NumItems = 2;
+
+// スタートシーン
+class Start : public App::Scene
+{
+public:
+
+	// コンストラクタ（必ず実装）
+	Start(const InitData& init)
+		: IScene{ init }
+	{
+		Window::Resize(900, 600);
+	}
+
+	~Start()
+	{
+		
+	}
+
+
+	// 更新関数（オプション）
+	void update() override
+	{
+		if (SimpleGUI::Button(U"スタート", Vec2{ 300, 500 },200))///ボタン
+		{
+			changeScene(U"Game",0.1s);
+		}
+
+		// 経過時間の蓄積
+		cattimeAccumulator += Scene::DeltaTime();
+
+		while (catSpawnTime <= cattimeAccumulator)
+		{
+			if (RandomBool()) {
+				// アイテムを左に出現させる
+				cats << Cat{ .pos = Vec2{ -50, Random(50,550)},.type = 0};
+			}
+			else {
+				// アイテムを右に出現させる
+				cats << Cat{ .pos = Vec2{ 850, Random(50,550)},.type = 1};
+			}
+
+			/*catSpeed += 50;*/
+			// 経過時間を減らす
+			cattimeAccumulator -= catSpawnTime;
+		}
+
+		///猫の移動
+		const double catmove = (catSpeed * Scene::DeltaTime());
+
+		for (auto& cat : cats)
+		{
+			if (cat.type == 0)cat.pos.x += catmove;
+			else cat.pos.x -= catmove;
+		}
+
+		///画面外の猫削除
+		cats.remove_if([](const Cat& cat) { return (900 < cat.pos.x); });
+		cats.remove_if([](const Cat& cat) { return (-100 > cat.pos.x); });
+
+
+	}
+
+	// 描画関数（オプション）
+	void draw() const override
+	{
+		Scene::SetBackground(ColorF{ 0.3, 0.4, 0.5 });
+		/*yuyaketexture.draw();*/
+
+		// 猫を描画する
+		for (const auto& cat : cats)
+		{
+			if (cat.type == 0) cattexture.mirrored().scaled(0.5).drawAt(cat.pos);
+			else cattexture.scaled(0.5).drawAt(cat.pos);
+		}
+
+		font(U"Dog Nest Battles").draw(200, 100);
+		font2(U"feat. Neko").draw(290, 200);
+	}
+
+private:
+	/// 基本サイズ 100 のフォントを作成
+	Font font = Font (50,U"material/LightNovelPOPv2.otf" );
+	Font font2 = Font (40, U"material/LightNovelPOPv2.otf");
+
+	Texture yuyaketexture{ Resource(U"material/yuyake.jpg") };
+
+	///猫
+	struct Cat
+	{
+		Vec2 pos;
+
+		size_t type = 0;
+	};
+	Array<Cat> cats;
+
+	Texture cattexture{ U"🐈"_emoji };
+
+	// 猫が毎秒何ピクセルの速さで移動するか
+	double catSpeed = 800.0;
+	// 前回の猫の出現から何秒経過したか
+	double cattimeAccumulator = 0.0;
+	// 何秒ごとに猫が出現するか
+	double catSpawnTime = 5.0;
+	// 前回の食べ物の出現から何秒経過したか
+	double catAccumulator = 0.0;
+};
 
 // ゲームシーン
 class Game : public App::Scene
@@ -40,6 +149,8 @@ public:
 			getData().houseY = Random(2);
 		}
 		getData().GameCount++;
+
+		Window::Resize(900, 600);
 	}
 
 	~Game()
@@ -304,6 +415,7 @@ public:
 				cats << Cat{ .pos = Vec2{ 850, 550 },.type = 1 };
 			}
 
+			catSpeed += 50;
 			// 経過時間を減らす
 			cattimeAccumulator -= catSpawnTime;
 		}
@@ -341,7 +453,7 @@ public:
 		for (auto it = cats.begin(); it != cats.end(); ) {
 			Circle catCircle{ it->pos, 30 };
 			bool intersectionFound = false;
-			Circle playerCircle{ playerPos, 30 };
+			/*Circle playerCircle{ playerPos, 30 };*/
 
 			if (playerCircle.intersects(catCircle)) {
 				// 削除する要素の位置を記録
@@ -360,7 +472,8 @@ public:
 		cats.remove_if([](const Cat& cat) { return (900 < cat.pos.x); });
 		cats.remove_if([](const Cat& cat) { return (-100 > cat.pos.x); });
 
-		///クリア判定
+		///終了判定///
+		///クリア時
 		hantei = true;
 
 		for (int32 i = 0; i < 3; i++) {
@@ -372,10 +485,11 @@ public:
 		}
 
 		if (hantei) {
+			getData().end = 1;
 			changeScene(U"End");
 		}
 
-		///負けたとき
+		///陣地を全て取られて負けた時
 		hantei = true;
 
 		for (int32 i = 0; i < 3; i++) {
@@ -387,14 +501,92 @@ public:
 		}
 
 		if (hantei) {
+			getData().end = 2;
 			changeScene(U"End");
+		}
+
+		///HPが0になって負けた時
+		if (getData().hp == 0) {
+			getData().end = 3;
+			changeScene(U"End");
+		}
+
+		///家にヒットした回数が50以上なら
+		if(getData().houseCount >= 50) {
+			getData().end = 4;
+			changeScene(U"End");
+		}
+
+		///背景関連
+		// 経過時間の蓄積
+		tumbletimeAccumulator += Scene::DeltaTime();
+
+		while (tumbleSpawnTime <= tumbletimeAccumulator)
+		{
+			if (RandomBool()) {
+				// アイテムを左に出現させる
+				tumbles << Tumble{ .pos = Vec2{ -50, Random(50, 550) },.type = 0,.angle = 0 };
+			}
+			else {
+				// アイテムを右に出現させる
+				tumbles << Tumble{ .pos = Vec2{ 850, Random(50, 550) },.type = 1 };
+			}
+
+			// 経過時間を減らす
+			tumbletimeAccumulator -= tumbleSpawnTime;
+		}
+
+		///tumbleの移動
+		const double tumblemove = (tumbleSpeed * Scene::DeltaTime());
+
+		for (auto& tumble : tumbles)
+		{
+			if (tumble.type == 0) {
+				tumble.pos.x += tumblemove;
+				tumble.angle += 5.0 * Scene::DeltaTime();
+			}
+			else {
+				tumble.pos.x -= tumblemove;
+				tumble.angle -= 5.0 * Scene::DeltaTime();
+			}
+		}
+
+		///画面外の猫削除
+		tumbles.remove_if([](const Tumble& tumble) { return (900 < tumble.pos.x); });
+		tumbles.remove_if([](const Tumble& tumble) { return (-100 > tumble.pos.x); });
+
+
+		///しっぽ時間経過判定
+		shippotimeAccumulator += Scene::DeltaTime();
+
+		while (shippoTime <= shippotimeAccumulator)
+		{
+			if (shippohantei) {
+				shippohantei = false;
+			}
+			else {
+				shippohantei = true;
+			}
+
+			// 経過時間を減らす
+			shippotimeAccumulator -= shippoTime;
 		}
 
 	}
 
 	void draw() const override
 	{
-		Scene::SetBackground(Palette::Green);
+		///背景
+		/*Scene::SetBackground(Palette::Green);*/
+		yuyaketexture.draw();
+		///タンブル描画する
+		for (const auto& tumble : tumbles)
+		{
+			double angle = tumble.angle;
+			if (tumble.type == 0) Tumbletexture.scaled(0.1).rotated(angle).drawAt(tumble.pos);
+			else Tumbletexture.scaled(0.1).rotated(angle).drawAt(tumble.pos);
+		}
+
 		///壁
 		Rect{ 45,0,5,600 }.draw(Palette::Pink);
 		Rect{ 45,0,705,5 }.draw(Palette::Pink);
@@ -409,10 +601,24 @@ public:
 						Rect{ 50 + 100 * j,i * 100 + 5,100,100 }.draw(Palette::Gray).drawFrame(3, 0);
 					}
 					else if (getData().area[i][j] == 1) {
-						Rect{ 50 + 100 * j,i * 100 + 5,100,100 }.draw(Palette::Blue).drawFrame(3, 0);
+						/*Rect{ 50 + 100 * j,i * 100 + 5,100,100 }.draw(Palette::Blue).drawFrame(3, 0);*/
+						Rect{ 50 + 100 * j,i * 100 + 5,100,100 }.drawFrame(3, 0);
+						if (shippohantei) {
+							shippo_kuro.scaled(0.25).drawAt(100 + 100 * j, i * 100 + 55);
+						}
+						else {
+							shippo_kuro.mirrored().scaled(0.25).drawAt(100 + 100 * j, i * 100 + 55);
+						}
 					}
 					else if (getData().area[i][j] == 2) {
-						Rect{ 50 + 100 * j,i * 100 + 5,100,100 }.draw(Palette::Red).drawFrame(3, 0);
+						/*Rect{ 50 + 100 * j,i * 100 + 5,100,100 }.draw(Palette::Red).drawFrame(3, 0);*/
+						Rect{ 50 + 100 * j,i * 100 + 5,100,100 }.drawFrame(3, 0);
+						if (shippohantei) {
+							shippo_gold.scaled(0.25).drawAt(100 + 100 * j, i * 100 + 55);
+						}
+						else {
+							shippo_gold.mirrored().scaled(0.25).drawAt(100 + 100 * j, i * 100 + 55);
+						}
 					}
 				}
 			}
@@ -456,8 +662,8 @@ public:
 private:
 	Texture dogtexture{ U"🐕"_emoji };
 	Texture enemytexture{ U"🐩"_emoji };
-	Texture padtexture{ U"material/nikukyu_kuro.png" };
-	Texture enemypadtexture{ U"material/nikukyu_pink.png" };
+	Texture padtexture{ Resource(U"material/nikukyu_kuro.png") };
+	Texture enemypadtexture{ Resource(U"material/nikukyu_pink.png")};
 	Vec2 playerPos{ 400,550 };
 	Vec2 enemyPos{ 400,550 };
 	//移動する速度を設定
@@ -503,7 +709,7 @@ private:
 	{
 		Texture{ Emoji{ U"🦴" }},
 		Texture{ Emoji{ U"🍖" }},
-	};ddd
+	};
 
 	// アイテムが毎秒何ピクセルの速さで落下するか
 	double itemSpeed = 400.0;
@@ -524,7 +730,7 @@ private:
 	Texture cattexture{ U"🐈"_emoji };
 
 	// 猫が毎秒何ピクセルの速さで移動するか
-	double catSpeed = 750.0;
+	double catSpeed = 200.0;
 	// 前回の猫の出現から何秒経過したか
 	double cattimeAccumulator = 0.0;
 	// 何秒ごとに猫が出現するか
@@ -543,6 +749,38 @@ private:
 	Texture housetexture{ U"🏡"_emoji };
 
 	bool hantei = true;
+
+	///背景関連
+	struct Tumble
+	{
+		Vec2 pos;
+		size_t type = 0;
+
+		double angle = 0;
+	};
+	Array<Tumble> tumbles;
+
+	Texture Tumbletexture{Resource(U"material/tumble.png")};
+
+	// タンブルが毎秒何ピクセルの速さで移動するか
+	double tumbleSpeed = 100.0;
+	// 前回のタンブルの出現から何秒経過したか
+	double tumbletimeAccumulator = 0.0;
+	// 何秒ごとにタンブルが出現するかddddddaa
+	double tumbleSpawnTime = 2.0;
+
+	Texture yuyaketexture{ Resource(U"material/yuyake.jpg") };
+
+	Texture shippo_kuro{ Resource(U"material/shippo_kuro.png") };
+	Texture shippo_gold{ Resource(U"material/shippo_gold.png") };
+
+	// 前回のしっぽチェンジから何秒経過したか
+	double shippotimeAccumulator = 0.0;
+	// 何秒ごとにしっぽがチェンジするか
+	double shippoTime = 0.5;
+
+	bool shippohantei = true;
+
 };
 
 // 猫バトルシーン
@@ -554,6 +792,7 @@ public:
 	Neko(const InitData& init)
 		: IScene{ init }
 	{
+		Window::Resize(900, 600);
 	}
 
 	~Neko()
@@ -702,12 +941,32 @@ public:
 
 		// 画面外に出た敵機ショットを削除する
 		enemyBullets.remove_if([](const Bullet& bullet) { return (700 < bullet.pos.y); });
+
+		///tumbleの移動
+		const double tumblemove = (tumbleSpeed * Scene::DeltaTime());
+
+		for (auto& tumble : tumbles)
+		{
+			if (tumble.type == 0) {
+				tumble.pos.x += tumblemove;
+				tumble.angle += 5.0 * Scene::DeltaTime();
+			}
+			else {
+				tumble.pos.x -= tumblemove;
+				tumble.angle -= 5.0 * Scene::DeltaTime();
+			}
+		}
+
+		///画面外の猫削除
+		tumbles.remove_if([](const Tumble& tumble) { return (900 < tumble.pos.x); });
+		tumbles.remove_if([](const Tumble& tumble) { return (-100 > tumble.pos.x); });
+
 	}
 
 	// 描画関数（オプション）
 	void draw() const override
 	{
-		Scene::SetBackground(ColorF{ 0.3, 0.4, 0.5 });
+		yuyaketexture.draw();
 
 		font(U"猫バトル").draw();
 
@@ -718,8 +977,8 @@ public:
 		Rect{ 45,595,700,5 }.draw(Palette::Pink);
 
 		//// プレイヤーテクスチャを指定の位置で回転して描画
-		enemytexture.scaled(0.7).rotated(90_deg).drawAt(enemyPos);
-		dogtexture.scaled(0.7).rotated(90_deg).drawAt(playerPos);
+		enemytexture.scaled(0.7).rotated(180_deg).drawAt(enemyPos);
+		dogtexture.scaled(0.7).rotated(0_deg).drawAt(playerPos);
 
 		// 自機ショットを描画する
 		for (const auto& playerBullet : playerBullets)
@@ -773,6 +1032,26 @@ private:
 	double enemylastShootTime = 10.0;
 
 	RectF shape{ 50, 100, 700, 600 };
+
+	///背景関連
+	struct Tumble
+	{
+		Vec2 pos;
+		size_t type = 0;
+
+		double angle = 0;
+	};
+	Array<Tumble> tumbles;
+
+	Texture Tumbletexture{ Resource(U"material/tumble.aapng") };
+	// タンブルが毎秒何ピクセルの速さで移動するか
+	double tumbleSpeed = 100.0;
+	// 前回のタンブルの出現から何秒経過したか
+	double tumbletimeAccumulator = 0.0;
+	// 何秒ごとにタンブルが出現するか
+	double tumbleSpawnTime = 2.0;
+
+	Texture yuyaketexture{ Resource(U"material/yuyake.jpg") };
 };
 
 // エンドシーン
@@ -789,6 +1068,8 @@ public:
 
 	~End()
 	{
+		if (getData().end == 4)  getData().houseCount = 0;
+		getData().end = 0;
 	}
 
 
@@ -803,12 +1084,15 @@ public:
 	{
 		Scene::SetBackground(ColorF{ 0.3, 0.4, 0.5 });
 
-		font(U"制圧完了!").draw(200, 200);
+		if(getData().end == 1) font(U"制圧完了!").draw(200, 200);
+		if (getData().end == 2) font(U"制圧された;;").draw(200, 200);
+		if (getData().end == 3) font(U"敗北").draw(200, 200);
+		if (getData().end == 4) font(U"ハッピーエンド").draw(200, 200);
 
 	}
 
 private:
-	/// 基本サイズ 50 のフォントを作成
+	/// 基本サイズ 100 のフォントを作成
 	Font font = Font(100);
 };
 
@@ -819,8 +1103,9 @@ void Main()
 	manager.add<Game>(U"Game");
 	manager.add<End>(U"End");
 	manager.add<Neko>(U"Neko");
+	manager.add<Start>(U"Start");
 	// "Game" シーンから開始
-	manager.init(U"Game");
+	manager.init(U"Start");
 
 	while (System::Update())
 	{

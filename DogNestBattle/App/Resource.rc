@@ -118,8 +118,12 @@ Resource(engine/soundfont/GMGSx.sf2.zstdcmp)
 //	Siv3D App Resources (Your application resources here)
 //
 //////////////////////////////////////////////////////
-
-
+Resource(material/nikukyu_kuro.png)
+Resource(material/nikukyu_pink.png)
+Resource(material/tumble.png)
+Resource(material/yuyake.jpg)
+Resource(material/shippo_kuro.png)
+Resource(material/shippo_gold.png)
 
 /* examples 
 
