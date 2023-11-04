@@ -731,10 +731,10 @@ public:
 						Rect{ 50 + 100 * j,i * 100 + 5,100,100 }.draw(Palette::Orangered).drawFrame(3, 0);
 						/*Rect{ 50 + 100 * j,i * 100 + 5,100,100 }.drawFrame(3, 0);*/
 						if (shippohantei) {
-							shippo_gold.scaled(0.25).drawAt(100 + 100 * j, i * 100 + 55);
+							shippo_gold.mirrored().scaled(0.25).drawAt(100 + 100 * j, i * 100 + 55);
 						}
 						else {
-							shippo_gold.mirrored().scaled(0.25).drawAt(100 + 100 * j, i * 100 + 55);
+							shippo_gold.scaled(0.25).drawAt(100 + 100 * j, i * 100 + 55);
 						}
 					}
 				}
