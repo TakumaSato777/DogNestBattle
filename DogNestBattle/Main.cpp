@@ -2,7 +2,7 @@
 
 struct GameData
 {
-	int32 hp = 5;
+	int32 hp = 3;
 	int32 GameCount = 0;
 	///陣地関連
 	Grid<int32> area;
@@ -18,7 +18,7 @@ struct GameData
 
 	///敵機ステータス
 	double enemyBulletSpeed = 600.0;
-	double enemycooldownTime = 3.0;
+	double enemycooldownTime = 2.5;
 
 	///エンド判定
 	int32 end = 0;
@@ -33,6 +33,28 @@ using App = SceneManager<String,GameData>;
 
 // アイテムの種類
 constexpr size_t NumItems = 2;
+
+/// エフェクト
+struct RingEffect : IEffect
+{
+	Vec2 m_pos;
+
+	ColorF m_color;
+
+	explicit RingEffect(const Vec2& pos)
+		: m_pos{ pos }
+		, m_color{ Palette::Green} {}
+
+	bool update(double t) override
+	{
+		// イージング
+		const double e = EaseOutExpo(t);
+
+		Circle{ m_pos, (e * 50) }.drawFrame((20.0 * (1.0 - e)), m_color);
+
+		return (t < 0.3);
+	}
+};
 
 // スタートシーン
 class Start : public App::Scene
@@ -263,6 +285,7 @@ public:
 				playerBullets << Bullet(playerPos.movedBy(0, -50), bulletVelocity);
 				lastShootTime = currentTime;
 				playerdog.play();
+				effect.add<RingEffect>(Cursor::Pos());///エフェクト
 			}
 		}
 
@@ -759,6 +782,9 @@ public:
 		///タイム機能
 		font2(U"Time:{:.1f}s"_fmt(getData().nowTime)).draw(760, 200, Palette::Black);
 
+		///エフェクト
+		effect.update();
+
 		//// あたり判定円のデバッグ表示
 		//{
 		//	// プレイヤーのあたり判定円
@@ -832,7 +858,7 @@ private:
 	// アイテムが毎秒何ピクセルの速さで落下するか
 	double itemSpeed = 400.0;
 	// 何秒ごとにアイテムが出現するか
-	double itemSpawnTime = 2.5;
+	double itemSpawnTime = 3.0;
 	// 前回の食べ物の出現から何秒経過したか
 	double timeAccumulator = 0.0;
 
@@ -886,7 +912,7 @@ private:
 	double tumbleSpeed = 100.0;
 	// 前回のタンブルの出現から何秒経過したか
 	double tumbletimeAccumulator = 0.0;
-	// 何秒ごとにタンブルが出現するかddddddaa
+	// 何秒ごとにタンブルが出現するか
 	double tumbleSpawnTime = 2.0;
 
 	Texture yuyaketexture{ Resource(U"material/yuyake.jpg") };
@@ -911,6 +937,9 @@ private:
 	Audio cat2{ Resource(U"material/cat1b.mp3") };
 	Audio powerup1{ Resource(U"material/powerup01.mp3") };
 	Audio powerup3{ Resource(U"material/powerup03.mp3") };
+
+	///エフェクト
+	Effect effect;
 };
 
 // 猫バトルシーン
@@ -997,6 +1026,7 @@ public:
 				playerBullets << Bullet(playerPos.movedBy(0, -50), bulletVelocity);
 				lastShootTime = currentTime;
 				dog.play();
+				effect.add<RingEffect>(Cursor::Pos());
 			}
 		}
 
@@ -1187,6 +1217,9 @@ public:
 
 		font(getData().hp).drawAt(830, 100);
 
+		///エフェクト
+		effect.update();
+
 		///タイム機能
 		font2(U"Time:{:.1f}s"_fmt(getData().nowTime)).draw(760, 200, Palette::Black);
 	}
@@ -1262,6 +1295,9 @@ private:
 
 	Audio cat{Resource(U"material/cat_like2a.mp3") };
 	Audio dog{ Resource(U"material/howling_player.mp3") };
+
+	///エフェクト
+	Effect effect;
 };
 
 // エンドシーン
@@ -1289,7 +1325,7 @@ public:
 			}
 		}
 
-		getData().hp = 5;
+		getData().hp = 3;
 
 		// 自機ショットのスピード
 		getData().BulletSpeed = 500.0;
@@ -1298,7 +1334,7 @@ public:
 
 		///敵機ステータス
 		getData().enemyBulletSpeed = 600.0;
-		getData().enemycooldownTime = 3.0;
+		getData().enemycooldownTime = 2.5;
 		getData().GameCount = 0;
 	}
 
