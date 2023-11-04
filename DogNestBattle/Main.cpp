@@ -14,14 +14,19 @@ struct GameData
 	// 自機ショットのスピード
 	double BulletSpeed = 500.0;
 	// 弾のクールダウン時間（秒単位）を設定
-	double cooldownTime = 2.0;
+	double cooldownTime = 3.0;
 
 	///敵機ステータス
-	double enemyBulletSpeed = 800.0;
-	double enemycooldownTime = 2.0;
+	double enemyBulletSpeed = 600.0;
+	double enemycooldownTime = 3.0;
 
 	///エンド判定
 	int32 end = 0;
+
+	///タイム機能
+	double startTime = 0;
+	double nowTime = 0;
+
 };
 
 using App = SceneManager<String,GameData>;
@@ -50,9 +55,10 @@ public:
 	// 更新関数（オプション）
 	void update() override
 	{
-		if (SimpleGUI::Button(U"スタート", Vec2{ 300, 500 },200))///ボタン
-		{
-			changeScene(U"Game",0.1s);
+
+		if (hantei == true) {
+			button.play();
+			changeScene(U"Game", 0.2s);
 		}
 
 		// 経過時間の蓄積
@@ -93,8 +99,12 @@ public:
 	// 描画関数（オプション）
 	void draw() const override
 	{
-		Scene::SetBackground(ColorF{ 0.3, 0.4, 0.5 });
-		moritexture.draw();
+		howling.play();
+		kouyatexture.scaled(0.25).draw();
+		if (SimpleGUI::Button(U"スタート", Vec2{ 300, 500 }, 200))///ボタン
+		{
+			hantei = true;
+		}
 
 		// 猫を描画する
 		for (const auto& cat : cats)
@@ -115,6 +125,8 @@ private:
 	Texture yuyaketexture{ Resource(U"material/yuyake.jpg") };
 	Texture soratexture{ Resource(U"material/sora.jpg") };
 	Texture moritexture{ Resource(U"material/mori.jpg") };
+	Texture morokoshitexture{ Resource(U"material/morokoshi.jpg") };
+	Texture kouyatexture{ Resource(U"material/kouya.jpg") };
 	///猫
 	struct Cat
 	{
@@ -134,6 +146,12 @@ private:
 	double catSpawnTime = 5.0;
 	// 前回の食べ物の出現から何秒経過したか
 	double catAccumulator = 0.0;
+
+	mutable bool hantei = false;
+
+	///オーディオ関係
+	Audio button{ Resource(U"material/select01.mp3")};
+	Audio howling{ Audio::Stream, Resource(U"material/howling.mp3") };
 };
 
 // ゲームシーン
@@ -148,6 +166,8 @@ public:
 			getData().area.resize(7, 3, 0);
 			getData().houseX = Random(6);
 			getData().houseY = Random(2);
+			getData().startTime = Scene::Time();
+			getData().nowTime = Scene::Time();
 		}
 		getData().GameCount++;
 
@@ -218,6 +238,7 @@ public:
 
 				playerBullets << Bullet(playerPos.movedBy(0, -50), bulletVelocity);
 				lastShootTime = currentTime;
+				playerdog.play();
 			}
 		}
 
@@ -225,7 +246,7 @@ public:
 		for (auto& playerBullet : playerBullets)
 		{
 			// 弾のあたり判定円
-			const Circle BulletCircle{ playerBullet.pos, 30 };
+			const Circle BulletCircle{ playerBullet.pos, 25 };
 
 			if (playerBullet.pos.y < 0 && playerBullet.velocity.y < 0)
 			{
@@ -267,7 +288,7 @@ public:
 		for (auto& playerBullet : playerBullets)
 		{
 			// 弾のあたり判定円
-			const Circle BulletCircle{ playerBullet.pos, 30 };
+			const Circle BulletCircle{ playerBullet.pos, 25 };
 
 
 			for (int32 i = 0; i < 3; i++) {
@@ -290,6 +311,7 @@ public:
 			Vec2 direction = (enemyAim - enemyPos).normalized(); // 敵からランダムな位置への正規化されたベクトル
 			Vec2 enemybulletVelocity = direction * getData().enemyBulletSpeed;
 			enemyBullets << Bullet(enemyPos.movedBy(0, -50), enemybulletVelocity);
+			enemydog.play();
 			enemylastShootTime = currentTime;
 		}
 
@@ -297,7 +319,7 @@ public:
 		for (auto& enemyBullet : enemyBullets)
 		{
 			// 弾のあたり判定円
-			const Circle BulletCircle{ enemyBullet.pos, 30 };
+			const Circle BulletCircle{ enemyBullet.pos, 25 };
 
 			if (enemyBullet.pos.y < 0 && enemyBullet.velocity.y < 0)
 			{
@@ -334,7 +356,7 @@ public:
 		for (auto& enemyBullet : enemyBullets)
 		{
 			// 弾のあたり判定円
-			const Circle BulletCircle{ enemyBullet.pos, 30 };
+			const Circle BulletCircle{ enemyBullet.pos, 25 };
 
 			for (int32 i = 0; i < 3; i++) {
 				for (int32 j = 0; j < 7; j++) {
@@ -347,12 +369,45 @@ public:
 			}
 		}
 
+		//// 自機ショットと敵機ショットの衝突(テスト)
+		//for (auto itPlayer = playerBullets.begin(); itPlayer != playerBullets.end(); )
+		//{
+		//	bool removePlayerBullet = false;
+
+		//	const Circle playerBulletCircle{ itPlayer->pos, 25 };
+
+		//	for (auto itEnemy = enemyBullets.begin(); itEnemy != enemyBullets.end(); )
+		//	{
+		//		const Circle enemyBulletCircle{ itEnemy->pos, 25 };
+
+		//		// 円同士の衝突を検出
+		//		if (playerBulletCircle.intersects(enemyBulletCircle))
+		//		{
+		//			removePlayerBullet = true;
+		//			itEnemy = enemyBullets.erase(itEnemy);
+		//		}
+		//		else
+		//		{
+		//			++itEnemy;
+		//		}
+		//	}
+
+		//	if (removePlayerBullet)
+		//	{
+		//		itPlayer = playerBullets.erase(itPlayer);
+		//	}
+		//	else
+		//	{
+		//		++itPlayer;
+		//	}
+		//}
+
 		///敵機ステータス更新
 		if (currentTime - statuslastupdateTime >= statuscooldownTime) {
 
-			getData().enemyBulletSpeed += 100.0;
-			getData().enemycooldownTime -= 0.2;
-			if (getData().enemycooldownTime < 0.2) getData().enemycooldownTime = 0.1;
+			getData().enemyBulletSpeed += 150.0;
+			getData().enemycooldownTime -= 0.3;
+			if (getData().enemycooldownTime < 0.5) getData().enemycooldownTime = 0.5;
 			statuslastupdateTime = currentTime;
 		}
 
@@ -378,17 +433,19 @@ public:
 			item.pos.y += move;
 		}
 
-		///アイテムの当たり判定
-		Circle playerCircle{ playerPos, 60 };
+		///アイテムの当たり判定(ステータス）
+		Circle playerCircle{ playerPos, 25 };
 		for (auto it = items.begin(); it != items.end(); ) {
 			Circle itemCircle{ it->pos, 30 };
 			if (playerCircle.intersects(itemCircle)) {
 				if (it->type == 0) {
 					getData().BulletSpeed += 100.0;
+					powerup1.play();
 				}
 				else {
 					getData().cooldownTime -= 0.5;
-					if (getData().cooldownTime < 0.5) getData().cooldownTime = 0.1;
+					if (getData().cooldownTime < 0.5) getData().cooldownTime = 0.5;
+					powerup3.play();
 				}
 				// 削除する要素
 				it = items.erase(it);
@@ -410,10 +467,12 @@ public:
 			if (RandomBool()) {
 				// アイテムを左に出現させる
 				cats << Cat{ .pos = Vec2{ -50, 550 },.type = 0 };
+				cat1.play();
 			}
 			else {
 				// アイテムを右に出現させる
 				cats << Cat{ .pos = Vec2{ 850, 550 },.type = 1 };
+				cat2.play();
 			}
 
 			catSpeed += 50;
@@ -432,11 +491,11 @@ public:
 
 		/////弾と猫の当たり判定
 		for (auto it = cats.begin(); it != cats.end(); ) {
-			Circle catCircle{ it->pos, 30 };
+			Circle catCircle{ it->pos, 25 };
 			bool intersectionFound = false;
 
 			for (auto& playerBullet : playerBullets) {
-				const Circle BulletCircle{ playerBullet.pos, 30 };
+				const Circle BulletCircle{ playerBullet.pos, 25 };
 				if (BulletCircle.intersects(catCircle)) {
 					// 削除する要素の位置を記録
 					it = cats.erase(it);
@@ -452,7 +511,7 @@ public:
 
 		/////プレイヤーと猫の当たり判定
 		for (auto it = cats.begin(); it != cats.end(); ) {
-			Circle catCircle{ it->pos, 30 };
+			Circle catCircle{ it->pos, 25 };
 			bool intersectionFound = false;
 			/*Circle playerCircle{ playerPos, 30 };*/
 
@@ -460,6 +519,7 @@ public:
 				// 削除する要素の位置を記録
 				it = cats.erase(it);
 				intersectionFound = true;
+				getData().hp--;
 				changeScene(U"Neko");
 				break;
 			}
@@ -512,8 +572,8 @@ public:
 			changeScene(U"End");
 		}
 
-		///家にヒットした回数が50以上なら
-		if(getData().houseCount >= 50) {
+		///家にヒットした回数が500以上なら
+		if(getData().houseCount >= 500) {
 			getData().end = 4;
 			changeScene(U"End");
 		}
@@ -573,6 +633,8 @@ public:
 			shippotimeAccumulator -= shippoTime;
 		}
 
+		///タイム機能
+		getData().nowTime = Scene::Time() - getData().startTime;
 	}
 
 	void draw() const override
@@ -580,7 +642,7 @@ public:
 		///背景
 		/*Scene::SetBackground(Palette::Green);*/
 		/*yuyaketexture.draw();*/
-		moritexture.scaled(0.6).draw();
+		kouyatexture.scaled(0.25).draw();
 		///タンブル描画する
 		for (const auto& tumble : tumbles)
 		{
@@ -663,10 +725,26 @@ public:
 		Shape2D::Heart(60, Vec2{ 830, 100 }).draw(Palette::Red);
 
 		font(getData().hp).drawAt(830,100);
+
+		///タイム機能
+		font2(U"Time:{:.1f}s"_fmt(getData().nowTime)).draw(760, 200, Palette::Black);
+
+		//// あたり判定円のデバッグ表示
+		//{
+		//	// プレイヤーのあたり判定円
+		//	Circle{ playerPos, 50 }.draw(ColorF{ 1.0, 1.0, 1.0, 0.5 });
+
+		//	for (const auto& playerBullet : playerBullets)
+		//	{
+		//		// 食べ物のあたり判定円
+		//		Circle{ playerBullet.pos, 25 }.draw(ColorF{ 1.0, 1.0, 1.0, 0.5 });
+		//	}
+		//}
 	}
 
 private:
 	Font font = Font(50, U"material/LightNovelPOPv2.otf");
+	Font font2 = Font(27, U"material/LightNovelPOPv2.otf");
 	Texture dogtexture{ U"🐕"_emoji };
 	Texture enemytexture{ U"🐩"_emoji };
 	Texture padtexture{ Resource(U"material/nikukyu_kuro.png") };
@@ -691,16 +769,16 @@ private:
 	// 自機ショット
 	Array<Bullet> playerBullets;
 	
-	double lastShootTime = 0.0;
+	double lastShootTime = -2.0;
 
 	///敵機ショット
 	Array<Bullet> enemyBullets;
 	/*double enemyBulletSpeed = 500.0;
 	double enemycooldownTime = 3.0;*/
-	double enemylastShootTime = 0.0;
+	double enemylastShootTime = -2.0;
 
 	///敵機ステータス更新
-	double statuscooldownTime = 20.0;
+	double statuscooldownTime = 5.0;
 	double statuslastupdateTime = 0.0;
 
 	///アイテム関連
@@ -736,7 +814,7 @@ private:
 
 	Texture cattexture{ U"🐈"_emoji };
 
-	// 猫が毎秒何ピクセルの速さで移動するか
+	// 猫が毎秒何ピクセルの速さで移動するか(ステータス)
 	double catSpeed = 200.0;
 	// 前回の猫の出現から何秒経過したか
 	double cattimeAccumulator = 0.0;
@@ -780,6 +858,7 @@ private:
 	Texture morokoshitexture{ Resource(U"material/morokoshi.jpg") };
 	Texture soratexture{ Resource(U"material/sora.jpg") };
 	Texture moritexture{ Resource(U"material/mori.jpg") };
+	Texture kouyatexture{ Resource(U"material/kouya.jpg") };
 
 	Texture shippo_kuro{ Resource(U"material/shippo_kuro.png") };
 	Texture shippo_gold{ Resource(U"material/shippo_gold.png") };
@@ -791,6 +870,12 @@ private:
 
 	bool shippohantei = true;
 
+	Audio enemydog{Resource(U"material/dog1b.mp3")};
+	Audio playerdog{ Resource(U"material/howling_player.mp3") };
+	Audio cat1{ Resource(U"material/cat1a.mp3") };
+	Audio cat2{ Resource(U"material/cat1b.mp3") };
+	Audio powerup1{ Resource(U"material/powerup01.mp3") };
+	Audio powerup3{ Resource(U"material/powerup03.mp3") };
 };
 
 // 猫バトルシーン
@@ -868,6 +953,7 @@ public:
 
 				playerBullets << Bullet(playerPos.movedBy(0, -50), bulletVelocity);
 				lastShootTime = currentTime;
+				dog.play();
 			}
 		}
 
@@ -875,7 +961,7 @@ public:
 		for (auto& playerBullet : playerBullets)
 		{
 			// 弾のあたり判定円
-			const Circle BulletCircle{ playerBullet.pos, 30 };
+			const Circle BulletCircle{ playerBullet.pos, 25 };
 
 			if (playerBullet.pos.y < 0 && playerBullet.velocity.y < 0 || 590 < playerBullet.pos.y && playerBullet.velocity.y > 0)
 			{
@@ -897,10 +983,11 @@ public:
 		for (auto& playerBullet : playerBullets)
 		{
 			// 弾のあたり判定円
-			const Circle BulletCircle{ playerBullet.pos, 30 };
+			const Circle BulletCircle{ playerBullet.pos, 25};
 			// 敵のあたり判定円
-			const Circle NekoCircle{ enemyPos, 30 };
+			const Circle NekoCircle{ enemyPos, 30};
 			if (BulletCircle.intersects(NekoCircle)) {
+				dog.play();
 				changeScene(U"Game");
 			}
 
@@ -916,6 +1003,7 @@ public:
 			Vec2 enemybulletVelocity = direction * enemyBulletSpeed;
 			enemyBullets << Bullet(enemyPos.movedBy(0, 50), enemybulletVelocity);
 			enemylastShootTime = currentTime;
+			cat.play();
 		}
 
 		// 敵機ショットを移動させる
@@ -939,14 +1027,48 @@ public:
 		for (auto& enemyBullet : enemyBullets)
 		{
 			// 弾のあたり判定円
-			const Circle BulletCircle{ enemyBullet.pos, 30 };
+			const Circle BulletCircle{ enemyBullet.pos, 25};
 			// プレイヤーのあたり判定円
-			const Circle playerCircle{ playerPos, 30 };
+			const Circle playerCircle{ playerPos, 50};
 			if (BulletCircle.intersects(playerCircle)) {
 				getData().hp--;
+				cat.play();
 				changeScene(U"Game");
 			}
 
+		}
+
+		// 自機ショットと敵機ショットの衝突(テスト)
+		for (auto itPlayer = playerBullets.begin(); itPlayer != playerBullets.end(); )
+		{
+			bool removePlayerBullet = false;
+
+			const Circle playerBulletCircle{ itPlayer->pos, 25 };
+
+			for (auto itEnemy = enemyBullets.begin(); itEnemy != enemyBullets.end(); )
+			{
+				const Circle enemyBulletCircle{ itEnemy->pos, 25 };
+
+				// 円同士の衝突を検出
+				if (playerBulletCircle.intersects(enemyBulletCircle))
+				{
+					removePlayerBullet = true;
+					itEnemy = enemyBullets.erase(itEnemy);
+				}
+				else
+				{
+					++itEnemy;
+				}
+			}
+
+			if (removePlayerBullet)
+			{
+				itPlayer = playerBullets.erase(itPlayer);
+			}
+			else
+			{
+				++itPlayer;
+			}
 		}
 
 		// 画面外に出た敵機ショットを削除する
@@ -971,7 +1093,7 @@ public:
 		tumbles.remove_if([](const Tumble& tumble) { return (900 < tumble.pos.x); });
 		tumbles.remove_if([](const Tumble& tumble) { return (-100 > tumble.pos.x); });
 
-		///しっぽ時間経過判定
+		///アニメーション時間経過判定
 		alphatimeAccumulator += Scene::DeltaTime();
 
 		while (alphaTime <= alphatimeAccumulator)
@@ -981,12 +1103,15 @@ public:
 			// 経過時間を減らす
 			alphatimeAccumulator -= alphaTime;
 		}
+
+		///タイム機能
+		getData().nowTime = Scene::Time() - getData().startTime;
 	}
 
 	// 描画関数（オプション）
 	void draw() const override
 	{
-		yuyaketexture.draw();
+		kouyatexture.scaled(0.25).draw();
 
 		///壁
 		Rect{ 45,0,5,600 }.draw(Palette::Black);
@@ -1013,15 +1138,24 @@ public:
 		/*Circle{ 100,200,100 }.draw(HSV{ 90,alpha });*/
 		Shape2D::NStar(10, 136, 102, Vec2{ 400, 220 }).draw(HSV{ 90,alpha });
 		font(U"猫バトル").draw(300, 185, HSV{ 20,alpha });
+
+		///HP
+		Shape2D::Heart(60, Vec2{ 830, 100 }).draw(Palette::Red);
+
+		font(getData().hp).drawAt(830, 100);
+
+		///タイム機能
+		font2(U"Time:{:.1f}s"_fmt(getData().nowTime)).draw(760, 200, Palette::Black);
 	}
 
 private:
 	/// 基本サイズ 50 のフォントを作成
-	Font font = Font(50);
+	Font font = Font(50, U"material/LightNovelPOPv2.otf");
+	Font font2 = Font(27, U"material/LightNovelPOPv2.otf");
 	Texture dogtexture{ U"🐕"_emoji };
 	Texture enemytexture{ U"🐈"_emoji };
 	Texture padtexture{ U"material/nikukyu_kuro.png" };
-	Texture enemypadtexture{ U"material/nikukyu_tya.png" };
+	Texture enemypadtexture{ U"material/nikukyu_pink.png" };
 	Vec2 playerPos{ 400,550 };
 	Vec2 enemyPos{ 400,50 };
 	//移動する速度を設定
@@ -1047,11 +1181,11 @@ private:
 	//double cooldownTime = 5.0;
 	double lastShootTime = -2.0;
 
-	///敵機ショット
+	///敵機ショット(ステータス)
 	Array<Bullet> enemyBullets;
-	double enemyBulletSpeed = 200.0;
-	double enemycooldownTime = 2.0;
-	double enemylastShootTime = -2.0;
+	double enemyBulletSpeed = 700.0;
+	double enemycooldownTime = 1.0;
+	double enemylastShootTime = -1.0;
 
 	RectF shape{ 50, 100, 700, 600 };
 
@@ -1074,12 +1208,15 @@ private:
 	double tumbleSpawnTime = 2.0;
 
 	Texture yuyaketexture{ Resource(U"material/yuyake.jpg") };
-
+	Texture moritexture{ Resource(U"material/mori.jpg") };
+	Texture kouyatexture{ Resource(U"material/kouya.jpg") };
 	///アニメーション
 	double alpha = 1.0;
 	double alphatimeAccumulator = 0.0;
 	double alphaTime = 0.1;
 
+	Audio cat{Resource(U"material/cat_like2a.mp3") };
+	Audio dog{ Resource(U"material/howling_player.mp3") };
 };
 
 // エンドシーン
@@ -1096,7 +1233,9 @@ public:
 
 	~End()
 	{
-		if (getData().end == 4)  getData().houseCount = 0;
+		if (getData().end == 4) {
+			getData().houseCount = 0;
+		}
 		getData().end = 0;
 
 		for (int32 i = 0; i < 3; i++) {
@@ -1110,18 +1249,20 @@ public:
 		// 自機ショットのスピード
 		getData().BulletSpeed = 500.0;
 		// 弾のクールダウン時間（秒単位）を設定
-		getData().cooldownTime = 2.0;
+		getData().cooldownTime = 3.0;
 
 		///敵機ステータス
-		getData().enemyBulletSpeed = 800.0;
-		getData().enemycooldownTime = 2.0;
-		
+		getData().enemyBulletSpeed = 600.0;
+		getData().enemycooldownTime = 3.0;
+		getData().GameCount = 0;
 	}
 
 
 	// 更新関数（オプション）
 	void update() override
 	{
+		if (hantei == true) changeScene(U"Game", 0.2s);
+
 		if (SimpleGUI::Button(U"スタート画面に戻る", Vec2{ 300, 500 }, 200))///ボタン
 		{
 			changeScene(U"Start", 0.1s);
@@ -1164,19 +1305,29 @@ public:
 	// 描画関数（オプション）
 	void draw() const override
 	{
-		Scene::SetBackground(ColorF{ 0.3, 0.4, 0.5 });
+		kouyatexture.scaled(0.25).draw();
+
+		kouyatexture.scaled(0.25).draw();
+		if (SimpleGUI::Button(U"スタート画面に戻る", Vec2{ 300, 500 }, 200))///ボタン
+		{
+			hantei = true;
+		}
 
 		if (getData().end == 1) {
-			font(U"巣食った!").draw(200, 200);
+			good.play();
+			font(U"巣食った!").draw(290, 200);
 			// 犬を描画する
 			for (const auto& cat : cats)
 			{
 				if (cat.type == 0) dogtexture.mirrored().scaled(0.8).drawAt(cat.pos);
 				else dogtexture.scaled(0.8).drawAt(cat.pos);
+				///タイム機能
+				font(U"ClearTime:{:.1f}s"_fmt(getData().nowTime)).draw(200, 300, Palette::Black);
 			}
 		}
 		if (getData().end == 2) {
-			font(U"巣食われた").draw(200, 200);
+			dogbad.play();
+			font(U"巣食われた").draw(290, 200);
 			// 敵犬を描画する
 			for (const auto& cat : cats)
 			{
@@ -1186,7 +1337,8 @@ public:
 		}
 		if (getData().end == 3)
 		{
-			font(U"猫が巣食った").draw(200, 200);
+			catbad.play();
+			font(U"猫が巣食った").draw(290, 200);
 			// 猫を描画する
 			for (const auto& cat : cats)
 			{
@@ -1195,8 +1347,9 @@ public:
 			}
 		}
 		if (getData().end == 4) {
-			font(U"救われた!").draw(200, 100);
-			font2(U"保護犬エンド").draw(200, 200);
+			good.play();
+			font(U"救われた!").draw(290, 100);
+			font2(U"保護犬エンド").draw(290, 200);
 
 			housetexture.drawAt(400, 400);
 			dogtexture.scaled(0.8).drawAt(200, 400);
@@ -1206,9 +1359,10 @@ public:
 	}
 
 private:
-	/// 基本サイズ 100 のフォントを作成
+	/// 基本サイズ 50 のフォントを作成
 	Font font = Font(50, U"material/LightNovelPOPv2.otf");
 	Font font2 = Font(40, U"material/LightNovelPOPv2.otf");
+	Texture kouyatexture{ Resource(U"material/kouya.jpg") };
 
 	///猫
 	struct Cat
@@ -1229,9 +1383,17 @@ private:
 	// 前回の猫の出現から何秒経過したか
 	double cattimeAccumulator = 0.0;
 	// 何秒ごとに猫が出現するか
-	double catSpawnTime = 1.0;
-	// 前回の食べ物の出現から何秒経過したか
+	double catSpawnTime = 0.5;
+	// 前回の猫の出現から何秒経過したか
 	double catAccumulator = 0.0;
+
+	mutable bool hantei = false;
+
+	///オーディオ関連
+	Audio catbad{ Resource(U"material/cats_fighting.mp3") };
+	Audio dogbad{ Resource(U"material/barking_dog_in_dream.mp3") };
+	Audio good{ Resource(U"material/party_poppers3.mp3") };
+
 };
 
 void Main()
