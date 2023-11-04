@@ -1236,8 +1236,8 @@ private:
 	Font font2 = Font(27, Resource(U"material/LightNovelPOPv2.otf"));
 	Texture dogtexture{Resource(U"material/player.png")};
 	Texture enemytexture{ Resource(U"material/neko.png") };
-	Texture padtexture{ U"material/nikukyu_kuro.png" };
-	Texture enemypadtexture{ U"material/nikukyu_pink.png" };
+	Texture padtexture{Resource(U"material/nikukyu_kuro.png") };
+	Texture enemypadtexture{Resource(U"material/nikukyu_pink.png") };
 	Vec2 playerPos{ 400,550 };
 	Vec2 enemyPos{ 400,50 };
 	//移動する速度を設定
