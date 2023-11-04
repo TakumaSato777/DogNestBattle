@@ -153,8 +153,8 @@ public:
 
 private:
 	/// 基本サイズ 100 のフォントを作成
-	Font font = Font (50,U"material/LightNovelPOPv2.otf" );
-	Font font2 = Font (40, U"material/LightNovelPOPv2.otf");
+	Font font = Font (50,Resource(U"material/LightNovelPOPv2.otf"));
+	Font font2 = Font (40, Resource(U"material/LightNovelPOPv2.otf"));
 
 	Texture yuyaketexture{ Resource(U"material/yuyake.jpg") };
 	Texture soratexture{ Resource(U"material/sora.jpg") };
@@ -800,8 +800,8 @@ public:
 	}
 
 private:
-	Font font = Font(50, U"material/LightNovelPOPv2.otf");
-	Font font2 = Font(27, U"material/LightNovelPOPv2.otf");
+	Font font = Font(50, Resource(U"material/LightNovelPOPv2.otf"));
+	Font font2 = Font(27, Resource(U"material/LightNovelPOPv2.otf"));
 	Texture dogtexture{ Resource(U"material/player.png") };
 	Texture enemytexture{ Resource(U"material/enemy.png") };
 	Texture padtexture{ Resource(U"material/nikukyu_kuro.png") };
@@ -1232,8 +1232,8 @@ public:
 
 private:
 	/// 基本サイズ 50 のフォントを作成
-	Font font = Font(50, U"material/LightNovelPOPv2.otf");
-	Font font2 = Font(27, U"material/LightNovelPOPv2.otf");
+	Font font = Font(50, Resource(U"material/LightNovelPOPv2.otf"));
+	Font font2 = Font(27, Resource(U"material/LightNovelPOPv2.otf"));
 	Texture dogtexture{Resource(U"material/player.png")};
 	Texture enemytexture{ Resource(U"material/neko.png") };
 	Texture padtexture{ U"material/nikukyu_kuro.png" };
@@ -1454,8 +1454,8 @@ public:
 
 private:
 	/// 基本サイズ 50 のフォントを作成
-	Font font = Font(50, U"material/LightNovelPOPv2.otf");
-	Font font2 = Font(40, U"material/LightNovelPOPv2.otf");
+	Font font = Font(50, Resource(U"material/LightNovelPOPv2.otf"));
+	Font font2 = Font(40, Resource(U"material/LightNovelPOPv2.otf"));
 	Texture kouyatexture{ Resource(U"material/kouya.jpg") };
 
 	///猫
