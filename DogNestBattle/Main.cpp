@@ -18,7 +18,7 @@ struct GameData
 
 	///敵機ステータス
 	double enemyBulletSpeed = 600.0;
-	double enemycooldownTime = 2.5;
+	double enemycooldownTime = 2.0;
 
 	///エンド判定
 	int32 end = 0;
@@ -148,7 +148,7 @@ public:
 		}
 
 		font(U"Dog Nest Battles").draw(200, 100,Palette::Black);
-		font2(U"feat. Neko").draw(290, 200, Palette::Black);
+		font2(U"With Neko").draw(290, 200, Palette::Black);
 	}
 
 private:
@@ -209,7 +209,7 @@ public:
 		}
 		getData().GameCount++;
 
-		Window::Resize(900, 600);
+		Window::Resize(900, 650);
 	}
 
 	~Game()
@@ -455,6 +455,7 @@ public:
 			getData().enemyBulletSpeed += 150.0;
 			getData().enemycooldownTime -= 0.3;
 			if (getData().enemycooldownTime < 0.5) getData().enemycooldownTime = 0.5;
+			/*if (getData().enemyBulletSpeed > 1500) getData().enemyBulletSpeed = 1500;*/
 			statuslastupdateTime = currentTime;
 		}
 
@@ -705,9 +706,9 @@ public:
 		}
 
 		///壁
-		Rect{ 45,0,5,600 }.draw(Palette::Black);
+		Rect{ 45,0,5,700 }.draw(Palette::Black);
 		Rect{ 45,0,705,5 }.draw(Palette::Black);
-		Rect{ 750,0,5,600 }.draw(Palette::Black);
+		Rect{ 750,0,5,700 }.draw(Palette::Black);
 
 		///陣地描画
 
@@ -1106,7 +1107,12 @@ public:
 			if (BulletCircle.intersects(playerCircle)) {
 				getData().hp--;
 				cat.play();
-				changeScene(U"Game");
+				///HPが0になって負けた時
+				if (getData().hp == 0) {
+					getData().end = 3;
+					changeScene(U"End");
+				}
+				else changeScene(U"Game");
 			}
 
 		}
