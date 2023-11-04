@@ -2,7 +2,7 @@
 
 struct GameData
 {
-	int32 hp = 3;
+	int32 hp = 5;
 	int32 GameCount = 0;
 	///陣地関連
 	Grid<int32> area;
@@ -38,7 +38,7 @@ public:
 	Start(const InitData& init)
 		: IScene{ init }
 	{
-		Window::Resize(900, 600);
+		/*Window::Resize(900, 600);*/
 	}
 
 	~Start()
@@ -94,7 +94,7 @@ public:
 	void draw() const override
 	{
 		Scene::SetBackground(ColorF{ 0.3, 0.4, 0.5 });
-		/*yuyaketexture.draw();*/
+		moritexture.draw();
 
 		// 猫を描画する
 		for (const auto& cat : cats)
@@ -113,7 +113,8 @@ private:
 	Font font2 = Font (40, U"material/LightNovelPOPv2.otf");
 
 	Texture yuyaketexture{ Resource(U"material/yuyake.jpg") };
-
+	Texture soratexture{ Resource(U"material/sora.jpg") };
+	Texture moritexture{ Resource(U"material/mori.jpg") };
 	///猫
 	struct Cat
 	{
@@ -159,7 +160,7 @@ public:
 
 	void update() override
 	{
-		{
+		/*{
 			ClearPrint();
 			Print << U"自機弾: " << playerBullets.size();
 			Print << U"敵機弾: " << enemyBullets.size();
@@ -169,7 +170,7 @@ public:
 			Print << U"弾速度: " << getData().BulletSpeed;
 			Print << U"家にぶつかった回数: " << getData().houseCount;
 			Print << U"HP: " << getData().hp;
-		}
+		}*/
 		const double deltaTime = Scene::DeltaTime();
 
 		// 右矢印キーが押されているかをチェック
@@ -578,7 +579,8 @@ public:
 	{
 		///背景
 		/*Scene::SetBackground(Palette::Green);*/
-		yuyaketexture.draw();
+		/*yuyaketexture.draw();*/
+		moritexture.scaled(0.6).draw();
 		///タンブル描画する
 		for (const auto& tumble : tumbles)
 		{
@@ -588,9 +590,9 @@ public:
 		}
 
 		///壁
-		Rect{ 45,0,5,600 }.draw(Palette::Pink);
-		Rect{ 45,0,705,5 }.draw(Palette::Pink);
-		Rect{ 750,0,5,600 }.draw(Palette::Pink);
+		Rect{ 45,0,5,600 }.draw(Palette::Black);
+		Rect{ 45,0,705,5 }.draw(Palette::Black);
+		Rect{ 750,0,5,600 }.draw(Palette::Black);
 
 		///陣地描画
 
@@ -601,8 +603,8 @@ public:
 						Rect{ 50 + 100 * j,i * 100 + 5,100,100 }.draw(Palette::Gray).drawFrame(3, 0);
 					}
 					else if (getData().area[i][j] == 1) {
-						/*Rect{ 50 + 100 * j,i * 100 + 5,100,100 }.draw(Palette::Blue).drawFrame(3, 0);*/
-						Rect{ 50 + 100 * j,i * 100 + 5,100,100 }.drawFrame(3, 0);
+						Rect{ 50 + 100 * j,i * 100 + 5,100,100 }.draw(Palette::Skyblue).drawFrame(3, 0);
+						/*Rect{ 50 + 100 * j,i * 100 + 5,100,100 }.drawFrame(3, 0);*/
 						if (shippohantei) {
 							shippo_kuro.scaled(0.25).drawAt(100 + 100 * j, i * 100 + 55);
 						}
@@ -611,8 +613,8 @@ public:
 						}
 					}
 					else if (getData().area[i][j] == 2) {
-						/*Rect{ 50 + 100 * j,i * 100 + 5,100,100 }.draw(Palette::Red).drawFrame(3, 0);*/
-						Rect{ 50 + 100 * j,i * 100 + 5,100,100 }.drawFrame(3, 0);
+						Rect{ 50 + 100 * j,i * 100 + 5,100,100 }.draw(Palette::Orangered).drawFrame(3, 0);
+						/*Rect{ 50 + 100 * j,i * 100 + 5,100,100 }.drawFrame(3, 0);*/
 						if (shippohantei) {
 							shippo_gold.scaled(0.25).drawAt(100 + 100 * j, i * 100 + 55);
 						}
@@ -657,9 +659,14 @@ public:
 		{
 			enemypadtexture.scaled(0.1).drawAt(enemyBullet.pos);
 		}
+
+		Shape2D::Heart(60, Vec2{ 830, 100 }).draw(Palette::Red);
+
+		font(getData().hp).drawAt(830,100);
 	}
 
 private:
+	Font font = Font(50, U"material/LightNovelPOPv2.otf");
 	Texture dogtexture{ U"🐕"_emoji };
 	Texture enemytexture{ U"🐩"_emoji };
 	Texture padtexture{ Resource(U"material/nikukyu_kuro.png") };
@@ -770,6 +777,9 @@ private:
 	double tumbleSpawnTime = 2.0;
 
 	Texture yuyaketexture{ Resource(U"material/yuyake.jpg") };
+	Texture morokoshitexture{ Resource(U"material/morokoshi.jpg") };
+	Texture soratexture{ Resource(U"material/sora.jpg") };
+	Texture moritexture{ Resource(U"material/mori.jpg") };
 
 	Texture shippo_kuro{ Resource(U"material/shippo_kuro.png") };
 	Texture shippo_gold{ Resource(U"material/shippo_gold.png") };
@@ -803,14 +813,14 @@ public:
 	// 更新関数（オプション）
 	void update() override
 	{
-		{
+		/*{
 			ClearPrint();
 			Print << U"自機弾: " << playerBullets.size();
 			Print << U"敵機弾: " << enemyBullets.size();
 			Print << U"クールダウン: " << getData().cooldownTime;
 			Print << U"弾速度: " << getData().BulletSpeed;
 			Print << U"HP: " << getData().hp;
-		}
+		}*/
 		const double deltaTime = Scene::DeltaTime();
 
 		// 右矢印キーが押されているかをチェック
@@ -961,6 +971,16 @@ public:
 		tumbles.remove_if([](const Tumble& tumble) { return (900 < tumble.pos.x); });
 		tumbles.remove_if([](const Tumble& tumble) { return (-100 > tumble.pos.x); });
 
+		///しっぽ時間経過判定
+		alphatimeAccumulator += Scene::DeltaTime();
+
+		while (alphaTime <= alphatimeAccumulator)
+		{
+			alpha -= 0.1;
+
+			// 経過時間を減らす
+			alphatimeAccumulator -= alphaTime;
+		}
 	}
 
 	// 描画関数（オプション）
@@ -968,13 +988,11 @@ public:
 	{
 		yuyaketexture.draw();
 
-		font(U"猫バトル").draw();
-
 		///壁
-		Rect{ 45,0,5,600 }.draw(Palette::Pink);
-		Rect{ 45,0,705,5 }.draw(Palette::Pink);
-		Rect{ 750,0,5,600 }.draw(Palette::Pink);
-		Rect{ 45,595,700,5 }.draw(Palette::Pink);
+		Rect{ 45,0,5,600 }.draw(Palette::Black);
+		Rect{ 45,0,705,5 }.draw(Palette::Black);
+		Rect{ 750,0,5,600 }.draw(Palette::Black);
+		Rect{ 45,595,700,5 }.draw(Palette::Black);
 
 		//// プレイヤーテクスチャを指定の位置で回転して描画
 		enemytexture.scaled(0.7).rotated(180_deg).drawAt(enemyPos);
@@ -991,15 +1009,19 @@ public:
 		{
 			enemypadtexture.scaled(0.1).drawAt(enemyBullet.pos);
 		}
+		
+		/*Circle{ 100,200,100 }.draw(HSV{ 90,alpha });*/
+		Shape2D::NStar(10, 136, 102, Vec2{ 400, 220 }).draw(HSV{ 90,alpha });
+		font(U"猫バトル").draw(300, 185, HSV{ 20,alpha });
 	}
 
 private:
 	/// 基本サイズ 50 のフォントを作成
-	Font font = Font(100);
+	Font font = Font(50);
 	Texture dogtexture{ U"🐕"_emoji };
 	Texture enemytexture{ U"🐈"_emoji };
 	Texture padtexture{ U"material/nikukyu_kuro.png" };
-	Texture enemypadtexture{ U"material/nikukyu_pink.png" };
+	Texture enemypadtexture{ U"material/nikukyu_tya.png" };
 	Vec2 playerPos{ 400,550 };
 	Vec2 enemyPos{ 400,50 };
 	//移動する速度を設定
@@ -1023,13 +1045,13 @@ private:
 	//double BulletSpeed = 500.0;
 	//// 弾のクールダウン時間（秒単位）を設定
 	//double cooldownTime = 5.0;
-	double lastShootTime = 10.0;
+	double lastShootTime = -2.0;
 
 	///敵機ショット
 	Array<Bullet> enemyBullets;
-	double enemyBulletSpeed = 1000.0;
-	double enemycooldownTime = 1.0;
-	double enemylastShootTime = 10.0;
+	double enemyBulletSpeed = 200.0;
+	double enemycooldownTime = 2.0;
+	double enemylastShootTime = -2.0;
 
 	RectF shape{ 50, 100, 700, 600 };
 
@@ -1052,6 +1074,12 @@ private:
 	double tumbleSpawnTime = 2.0;
 
 	Texture yuyaketexture{ Resource(U"material/yuyake.jpg") };
+
+	///アニメーション
+	double alpha = 1.0;
+	double alphatimeAccumulator = 0.0;
+	double alphaTime = 0.1;
+
 };
 
 // エンドシーン
@@ -1070,13 +1098,67 @@ public:
 	{
 		if (getData().end == 4)  getData().houseCount = 0;
 		getData().end = 0;
+
+		for (int32 i = 0; i < 3; i++) {
+			for (int32 j = 0; j < 7; j++) {
+				getData().area[i][j] = 0;
+			}
+		}
+
+		getData().hp = 5;
+
+		// 自機ショットのスピード
+		getData().BulletSpeed = 500.0;
+		// 弾のクールダウン時間（秒単位）を設定
+		getData().cooldownTime = 2.0;
+
+		///敵機ステータス
+		getData().enemyBulletSpeed = 800.0;
+		getData().enemycooldownTime = 2.0;
+		
 	}
 
 
 	// 更新関数（オプション）
 	void update() override
 	{
-		
+		if (SimpleGUI::Button(U"スタート画面に戻る", Vec2{ 300, 500 }, 200))///ボタン
+		{
+			changeScene(U"Start", 0.1s);
+		}
+
+		// 経過時間の蓄積
+		///catだけど犬
+		cattimeAccumulator += Scene::DeltaTime();
+
+		while (catSpawnTime <= cattimeAccumulator)
+		{
+			if (RandomBool()) {
+				// アイテムを左に出現させる
+				cats << Cat{ .pos = Vec2{ -50, Random(50,550)},.type = 0 };
+			}
+			else {
+				// アイテムを右に出現させる
+				cats << Cat{ .pos = Vec2{ 850, Random(50,550)},.type = 1 };
+			}
+
+			/*catSpeed += 50;*/
+			// 経過時間を減らす
+			cattimeAccumulator -= catSpawnTime;
+		}
+
+		///猫の移動
+		const double catmove = (catSpeed * Scene::DeltaTime());
+
+		for (auto& cat : cats)
+		{
+			if (cat.type == 0)cat.pos.x += catmove;
+			else cat.pos.x -= catmove;
+		}
+
+		///画面外の猫削除
+		cats.remove_if([](const Cat& cat) { return (900 < cat.pos.x); });
+		cats.remove_if([](const Cat& cat) { return (-100 > cat.pos.x); });
 	}
 
 	// 描画関数（オプション）
@@ -1084,16 +1166,72 @@ public:
 	{
 		Scene::SetBackground(ColorF{ 0.3, 0.4, 0.5 });
 
-		if(getData().end == 1) font(U"制圧完了!").draw(200, 200);
-		if (getData().end == 2) font(U"制圧された;;").draw(200, 200);
-		if (getData().end == 3) font(U"敗北").draw(200, 200);
-		if (getData().end == 4) font(U"ハッピーエンド").draw(200, 200);
+		if (getData().end == 1) {
+			font(U"巣食った!").draw(200, 200);
+			// 犬を描画する
+			for (const auto& cat : cats)
+			{
+				if (cat.type == 0) dogtexture.mirrored().scaled(0.8).drawAt(cat.pos);
+				else dogtexture.scaled(0.8).drawAt(cat.pos);
+			}
+		}
+		if (getData().end == 2) {
+			font(U"巣食われた").draw(200, 200);
+			// 敵犬を描画する
+			for (const auto& cat : cats)
+			{
+				if (cat.type == 0) enemytexture.mirrored().scaled(0.8).drawAt(cat.pos);
+				else enemytexture.scaled(0.8).drawAt(cat.pos);
+			}
+		}
+		if (getData().end == 3)
+		{
+			font(U"猫が巣食った").draw(200, 200);
+			// 猫を描画する
+			for (const auto& cat : cats)
+			{
+				if (cat.type == 0) cattexture.mirrored().scaled(0.8).drawAt(cat.pos);
+				else cattexture.scaled(0.8).drawAt(cat.pos);
+			}
+		}
+		if (getData().end == 4) {
+			font(U"救われた!").draw(200, 100);
+			font2(U"保護犬エンド").draw(200, 200);
+
+			housetexture.drawAt(400, 400);
+			dogtexture.scaled(0.8).drawAt(200, 400);
+			enemytexture.scaled(0.8).drawAt(600, 400);
+		}
 
 	}
 
 private:
 	/// 基本サイズ 100 のフォントを作成
-	Font font = Font(100);
+	Font font = Font(50, U"material/LightNovelPOPv2.otf");
+	Font font2 = Font(40, U"material/LightNovelPOPv2.otf");
+
+	///猫
+	struct Cat
+	{
+		Vec2 pos;
+
+		size_t type = 0;
+	};
+	Array<Cat> cats;
+
+	Texture dogtexture{ U"🐕"_emoji };
+	Texture enemytexture{ U"🐩"_emoji };
+	Texture cattexture{ U"🐈"_emoji };
+	Texture housetexture{ U"🏘"_emoji };
+
+	// 猫が毎秒何ピクセルの速さで移動するか
+	double catSpeed = 500.0;
+	// 前回の猫の出現から何秒経過したか
+	double cattimeAccumulator = 0.0;
+	// 何秒ごとに猫が出現するか
+	double catSpawnTime = 1.0;
+	// 前回の食べ物の出現から何秒経過したか
+	double catAccumulator = 0.0;
 };
 
 void Main()

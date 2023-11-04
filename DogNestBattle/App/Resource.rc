@@ -120,10 +120,14 @@ Resource(engine/soundfont/GMGSx.sf2.zstdcmp)
 //////////////////////////////////////////////////////
 Resource(material/nikukyu_kuro.png)
 Resource(material/nikukyu_pink.png)
+Resource(material/nikukyu_tya.png)
 Resource(material/tumble.png)
 Resource(material/yuyake.jpg)
 Resource(material/shippo_kuro.png)
 Resource(material/shippo_gold.png)
+Resource(material/morokoshi.jpg)
+Resource(material/mori.jpg)
+Resource(material/sora.jpg)
 
 /* examples 
 
