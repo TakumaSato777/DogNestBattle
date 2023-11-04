@@ -66,13 +66,18 @@ public:
 
 		while (catSpawnTime <= cattimeAccumulator)
 		{
-			if (RandomBool()) {
+			int32 r = Random(2);
+			if (r == 0){
 				// アイテムを左に出現させる
 				cats << Cat{ .pos = Vec2{ -50, Random(50,550)},.type = 0};
 			}
-			else {
+			else if(r == 1) {
 				// アイテムを右に出現させる
 				cats << Cat{ .pos = Vec2{ 850, Random(50,550)},.type = 1};
+			}
+			else {
+				// アイテムを左に出現させる
+				cats << Cat{ .pos = Vec2{ -50, Random(50,550)},.type = 2 };
 			}
 
 			/*catSpeed += 50;*/
@@ -85,8 +90,14 @@ public:
 
 		for (auto& cat : cats)
 		{
-			if (cat.type == 0)cat.pos.x += catmove;
-			else cat.pos.x -= catmove;
+			if (cat.type % 2 == 0) {
+				cat.pos.x += catmove;
+				cat.angle += 10.0 * Scene::DeltaTime();
+			}
+			else {
+				cat.pos.x -= catmove;
+				cat.angle -= 10.0 * Scene::DeltaTime();
+			}
 		}
 
 		///画面外の猫削除
@@ -106,15 +117,16 @@ public:
 			hantei = true;
 		}
 
-		// 猫を描画する
+		// 猫(犬)を描画する
 		for (const auto& cat : cats)
 		{
-			if (cat.type == 0) cattexture.mirrored().scaled(0.5).drawAt(cat.pos);
-			else cattexture.scaled(0.5).drawAt(cat.pos);
+			if (cat.type == 0) cattexture.mirrored().scaled(0.05).rotated(cat.angle).drawAt(cat.pos);
+			else if(cat.type == 1) playertexture.scaled(0.2).rotated(cat.angle).drawAt(cat.pos);
+			else enemytexture.scaled(0.2).rotated(cat.angle).drawAt(cat.pos);
 		}
 
-		font(U"Dog Nest Battles").draw(200, 100);
-		font2(U"feat. Neko").draw(290, 200);
+		font(U"Dog Nest Battles").draw(200, 100,Palette::Black);
+		font2(U"feat. Neko").draw(290, 200, Palette::Black);
 	}
 
 private:
@@ -133,17 +145,21 @@ private:
 		Vec2 pos;
 
 		size_t type = 0;
+
+		double angle = 0;
 	};
 	Array<Cat> cats;
 
-	Texture cattexture{ U"🐈"_emoji };
+	Texture cattexture{Resource(U"material/neko.png")};
+	Texture playertexture{ Resource(U"material/player.png") };
+	Texture enemytexture{ Resource(U"material/enemy.png") };
 
 	// 猫が毎秒何ピクセルの速さで移動するか
 	double catSpeed = 800.0;
 	// 前回の猫の出現から何秒経過したか
 	double cattimeAccumulator = 0.0;
 	// 何秒ごとに猫が出現するか
-	double catSpawnTime = 5.0;
+	double catSpawnTime = 0.5;
 	// 前回の食べ物の出現から何秒経過したか
 	double catAccumulator = 0.0;
 
@@ -198,12 +214,14 @@ public:
 		{
 			// 経過時間に応じて移動
 			playerPos.x += moveSpeed * deltaTime;
+			playerangle += 10.0 * Scene::DeltaTime();
 		}
-
+		///左も
 		if (leftInput.pressed())
 		{
 			// 経過時間に応じて移動
 			playerPos.x -= moveSpeed * deltaTime;
+			playerangle -= 10.0 * Scene::DeltaTime();
 		}
 
 		playerPos.x = Clamp(playerPos.x, 100.0, 700.0);
@@ -222,6 +240,12 @@ public:
 		}
 
 		enemyPos.x += enemySpeed * deltaTime;
+		if (enemySpeed < 0) {
+			enemyangle -= 5.0 * Scene::DeltaTime();
+		}
+		else {
+			enemyangle += 5.0 * Scene::DeltaTime();
+		}
 
 		///弾発射
 		// 自機ショットの発射
@@ -485,8 +509,14 @@ public:
 
 		for (auto& cat : cats)
 		{
-			if (cat.type == 0)cat.pos.x += catmove;
-			else cat.pos.x -= catmove;
+			if (cat.type == 0) {
+				cat.pos.x += catmove;
+				cat.angle += 10.0 * Scene::DeltaTime();
+			}
+			else {
+				cat.pos.x -= catmove;
+				cat.angle -= 10.0 * Scene::DeltaTime();
+			}
 		}
 
 		/////弾と猫の当たり判定
@@ -697,14 +727,14 @@ public:
 		}
 
 		//// プレイヤーテクスチャを指定の位置で回転して描画
-		enemytexture.scaled(0.7).rotated(90_deg).drawAt(enemyPos);
-		dogtexture.scaled(0.7).rotated(90_deg).drawAt(playerPos);
+		enemytexture.scaled(0.2).rotated(enemyangle).drawAt(enemyPos);
+		dogtexture.scaled(0.2).rotated(playerangle).drawAt(playerPos);
 
 		// 猫を描画する
 		for (const auto& cat : cats)
 		{
-			if (cat.type == 0) cattexture.mirrored().scaled(0.5).drawAt(cat.pos);
-			else cattexture.scaled(0.5).drawAt(cat.pos);
+			if (cat.type == 0) cattexture.mirrored().scaled(0.05).rotated(cat.angle).drawAt(cat.pos);
+			else cattexture.scaled(0.05).rotated(cat.angle).drawAt(cat.pos);
 		}
 
 		///家
@@ -745,8 +775,8 @@ public:
 private:
 	Font font = Font(50, U"material/LightNovelPOPv2.otf");
 	Font font2 = Font(27, U"material/LightNovelPOPv2.otf");
-	Texture dogtexture{ U"🐕"_emoji };
-	Texture enemytexture{ U"🐩"_emoji };
+	Texture dogtexture{ Resource(U"material/player.png") };
+	Texture enemytexture{ Resource(U"material/enemy.png") };
 	Texture padtexture{ Resource(U"material/nikukyu_kuro.png") };
 	Texture enemypadtexture{ Resource(U"material/nikukyu_pink.png")};
 	Vec2 playerPos{ 400,550 };
@@ -754,6 +784,9 @@ private:
 	//移動する速度を設定
 	double moveSpeed = 300.0;
 	double enemySpeed = 300.0;
+	double playerangle = 0;
+	double enemyangle = 0;
+
 	const InputGroup leftInput = (KeyLeft | KeyA);
 	const InputGroup rightInput = (KeyRight | KeyD);
 	const InputGroup upInput = (KeyUp | KeyW);
@@ -809,10 +842,12 @@ private:
 		Vec2 pos;
 
 		size_t type = 0;
+
+		double angle = 0;
 	};
 	Array<Cat> cats;
 
-	Texture cattexture{ U"🐈"_emoji };
+	Texture cattexture{ Resource(U"material/neko.png") };
 
 	// 猫が毎秒何ピクセルの速さで移動するか(ステータス)
 	double catSpeed = 200.0;
@@ -913,12 +948,14 @@ public:
 		{
 			// 経過時間に応じて移動
 			playerPos.x += moveSpeed * deltaTime;
+			playerangle += 10.0 * Scene::DeltaTime();
 		}
 
 		if (leftInput.pressed())
 		{
 			// 経過時間に応じて移動
 			playerPos.x -= moveSpeed * deltaTime;
+			playerangle -= 10.0 * Scene::DeltaTime();
 		}
 
 		playerPos.x = Clamp(playerPos.x, 100.0, 700.0);
@@ -937,6 +974,12 @@ public:
 		}
 
 		enemyPos.x += enemySpeed * deltaTime;
+		if (enemySpeed < 0) {
+			enemyangle -= 10.0 * Scene::DeltaTime();
+		}
+		else {
+			enemyangle += 10.0 * Scene::DeltaTime();
+		}
 
 		///弾発射
 		// 自機ショットの発射
@@ -1120,8 +1163,8 @@ public:
 		Rect{ 45,595,700,5 }.draw(Palette::Black);
 
 		//// プレイヤーテクスチャを指定の位置で回転して描画
-		enemytexture.scaled(0.7).rotated(180_deg).drawAt(enemyPos);
-		dogtexture.scaled(0.7).rotated(0_deg).drawAt(playerPos);
+		enemytexture.scaled(0.05).rotated(enemyangle).drawAt(enemyPos);
+		dogtexture.scaled(0.2).rotated(playerangle).drawAt(playerPos);
 
 		// 自機ショットを描画する
 		for (const auto& playerBullet : playerBullets)
@@ -1152,8 +1195,8 @@ private:
 	/// 基本サイズ 50 のフォントを作成
 	Font font = Font(50, U"material/LightNovelPOPv2.otf");
 	Font font2 = Font(27, U"material/LightNovelPOPv2.otf");
-	Texture dogtexture{ U"🐕"_emoji };
-	Texture enemytexture{ U"🐈"_emoji };
+	Texture dogtexture{Resource(U"material/player.png")};
+	Texture enemytexture{ Resource(U"material/neko.png") };
 	Texture padtexture{ U"material/nikukyu_kuro.png" };
 	Texture enemypadtexture{ U"material/nikukyu_pink.png" };
 	Vec2 playerPos{ 400,550 };
@@ -1165,6 +1208,8 @@ private:
 	const InputGroup rightInput = (KeyRight | KeyD);
 	const InputGroup upInput = (KeyUp | KeyW);
 	const InputGroup downInput = (KeyDown | KeyS);
+	double playerangle = 0;
+	double enemyangle = 0;
 
 	///弾関連
 	struct Bullet {
@@ -1261,12 +1306,8 @@ public:
 	// 更新関数（オプション）
 	void update() override
 	{
-		if (hantei == true) changeScene(U"Game", 0.2s);
-
-		if (SimpleGUI::Button(U"スタート画面に戻る", Vec2{ 300, 500 }, 200))///ボタン
-		{
-			changeScene(U"Start", 0.1s);
-		}
+		if (hantei == 1) changeScene(U"Start", 0.2s);
+		if (hantei == 2) System::Exit();
 
 		// 経過時間の蓄積
 		///catだけど犬
@@ -1293,8 +1334,14 @@ public:
 
 		for (auto& cat : cats)
 		{
-			if (cat.type == 0)cat.pos.x += catmove;
-			else cat.pos.x -= catmove;
+			if (cat.type == 0) {
+				cat.pos.x += catmove;
+				cat.angle += 10.0 * Scene::DeltaTime();
+			}
+			else {
+				cat.pos.x -= catmove;
+				cat.angle -= 10.0 * Scene::DeltaTime();
+			}
 		}
 
 		///画面外の猫削除
@@ -1308,52 +1355,57 @@ public:
 		kouyatexture.scaled(0.25).draw();
 
 		kouyatexture.scaled(0.25).draw();
-		if (SimpleGUI::Button(U"スタート画面に戻る", Vec2{ 300, 500 }, 200))///ボタン
+		if (SimpleGUI::Button(U"スタート画面に戻る", Vec2{ 100, 500 }, 200))///ボタン
 		{
-			hantei = true;
+			hantei = 1;
+		}
+
+		if (SimpleGUI::Button(U"ゲームをやめる", Vec2{ 500, 500 }, 200))///ボタン
+		{
+			hantei = 2;
 		}
 
 		if (getData().end == 1) {
 			good.play();
-			font(U"巣食った!").draw(290, 200);
+			font(U"巣食った!").draw(295, 200, Palette::Black);
 			// 犬を描画する
 			for (const auto& cat : cats)
 			{
-				if (cat.type == 0) dogtexture.mirrored().scaled(0.8).drawAt(cat.pos);
-				else dogtexture.scaled(0.8).drawAt(cat.pos);
+				if (cat.type == 0) dogtexture.mirrored().scaled(0.3).rotated(cat.angle).drawAt(cat.pos);
+				else dogtexture.scaled(0.3).rotated(cat.angle).drawAt(cat.pos);
 				///タイム機能
-				font(U"ClearTime:{:.1f}s"_fmt(getData().nowTime)).draw(200, 300, Palette::Black);
+				font(U"ClearTime:{:.1f}s"_fmt(getData().nowTime)).draw(210, 300, Palette::Mediumvioletred);
 			}
 		}
 		if (getData().end == 2) {
 			dogbad.play();
-			font(U"巣食われた").draw(290, 200);
+			font(U"巣食われた").draw(295, 200, Palette::Black);
 			// 敵犬を描画する
 			for (const auto& cat : cats)
 			{
-				if (cat.type == 0) enemytexture.mirrored().scaled(0.8).drawAt(cat.pos);
-				else enemytexture.scaled(0.8).drawAt(cat.pos);
+				if (cat.type == 0) enemytexture.mirrored().scaled(0.3).rotated(cat.angle).drawAt(cat.pos);
+				else enemytexture.scaled(0.3).rotated(cat.angle).drawAt(cat.pos);
 			}
 		}
 		if (getData().end == 3)
 		{
 			catbad.play();
-			font(U"猫が巣食った").draw(290, 200);
+			font(U"猫が巣食った").draw(295, 200, Palette::Black);
 			// 猫を描画する
 			for (const auto& cat : cats)
 			{
-				if (cat.type == 0) cattexture.mirrored().scaled(0.8).drawAt(cat.pos);
-				else cattexture.scaled(0.8).drawAt(cat.pos);
+				if (cat.type == 0) cattexture.mirrored().scaled(0.1).rotated(cat.angle).drawAt(cat.pos);
+				else cattexture.scaled(0.1).rotated(cat.angle).drawAt(cat.pos);
 			}
 		}
 		if (getData().end == 4) {
 			good.play();
-			font(U"救われた!").draw(290, 100);
-			font2(U"保護犬エンド").draw(290, 200);
+			font(U"救われた!").draw(295, 100, Palette::Black);
+			font2(U"飼い犬エンド").draw(295, 200, Palette::Black);
 
 			housetexture.drawAt(400, 400);
-			dogtexture.scaled(0.8).drawAt(200, 400);
-			enemytexture.scaled(0.8).drawAt(600, 400);
+			dogtexture.scaled(0.4).drawAt(200, 400);
+			enemytexture.scaled(0.4).drawAt(600, 400);
 		}
 
 	}
@@ -1370,12 +1422,14 @@ private:
 		Vec2 pos;
 
 		size_t type = 0;
+
+		double angle = 0;
 	};
 	Array<Cat> cats;
 
-	Texture dogtexture{ U"🐕"_emoji };
-	Texture enemytexture{ U"🐩"_emoji };
-	Texture cattexture{ U"🐈"_emoji };
+	Texture dogtexture{Resource(U"material/player.png")};
+	Texture enemytexture{ Resource(U"material/enemy.png") };
+	Texture cattexture{ Resource(U"material/neko.png") };
 	Texture housetexture{ U"🏘"_emoji };
 
 	// 猫が毎秒何ピクセルの速さで移動するか
@@ -1387,7 +1441,7 @@ private:
 	// 前回の猫の出現から何秒経過したか
 	double catAccumulator = 0.0;
 
-	mutable bool hantei = false;
+	mutable int32 hantei = 0;
 
 	///オーディオ関連
 	Audio catbad{ Resource(U"material/cats_fighting.mp3") };

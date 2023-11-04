@@ -141,6 +141,9 @@ Resource(material/howling_player.mp3)
 Resource(material/cats_fighting.mp3)
 Resource(material/barking_dog_in_dream.mp3)
 Resource(material/party_poppers3.mp3)
+Resource(material/player.png)
+Resource(material/enemy.png)
+Resource(material/neko.png)
 
 /* examples 
 
