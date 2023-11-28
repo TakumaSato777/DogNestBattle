@@ -22,7 +22,7 @@ https://bandainamcostudios.connpass.com/event/295239/
 クリアタイムが表示される
 
 # プレイ方法,コツ
-DogNestBattle.exeファイルをダウンロードして実行するだけ
+DogNestBattle.exeファイルをダウンロードして実行するだけです。
 https://github.com/TakumaSato777/DogNestBattle/blob/master/DogNestBattle/App/DogNestBattle.exe
 
 移動:A,D,←,→
